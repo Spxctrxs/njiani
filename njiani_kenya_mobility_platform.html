@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NJIANI - Kenya Mobility Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            DEFAULT: '#0B1F44',
+                            dark: '#06132B',
+                            light: '#163166',
+                            accent: '#1E3A8A'
+                        },
+                        orange: {
+                            DEFAULT: '#F7931E',
+                            dark: '#D87A0B',
+                            light: '#FFAC4B',
+                        },
+                        pinkaccent: {
+                            DEFAULT: '#FF2A6D',
+                            light: '#FF5C8D',
+                            dark: '#D4145A'
+                        },
+                        softblue: '#E6F0FF',
+                        charcoal: '#121824',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        
+        /* Device Frame Styles */
+        .phone-frame {
+            max-width: 440px;
+            height: 900px;
+            border-radius: 44px;
+            box-shadow: 0 25px 50px -12px rgba(11, 31, 68, 0.8), 0 0 0 12px #0B1F44;
+        }
+        .full-frame {
+            width: 100%;
+            max-width: 1240px;
+            height: 92vh;
+            border-radius: 28px;
+        }
+
+        /* Leaflet Marker Animations */
+        .pulse-user-marker {
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+            animation: pulse-user 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+        @keyframes pulse-user {
+            to { box-shadow: 0 0 0 18px rgba(37, 99, 235, 0); }
+        }
+        .pulse-stage-marker {
+            box-shadow: 0 0 0 0 rgba(247, 147, 30, 0.7);
+            animation: pulse-stage 1.6s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+        @keyframes pulse-stage {
+            to { box-shadow: 0 0 0 14px rgba(247, 147, 30, 0); }
+        }
+
+        .moving-vehicle-icon {
+            transition: all 0.25s linear;
+        }
+
+        /* Uiverse.io Gradient Card & Button Styling */
+        .uiverse-card {
+            background-image: linear-gradient(163deg, #00ff75 0%, #3700ff 100%);
+            border-radius: 22px;
+            transition: all 0.3s;
+            padding: 2px;
+            width: 100%;
+        }
+
+        .uiverse-card-brand {
+            background-image: linear-gradient(163deg, #F7931E 0%, #FF2A6D 100%);
+            border-radius: 22px;
+            transition: all 0.3s;
+            padding: 2px;
+            width: 100%;
+        }
+
+        .uiverse-inner-dark {
+            background-color: #121824;
+            border-radius: 20px;
+            transition: all 0.2s;
+            width: 100%;
+            height: 100%;
+        }
+
+        .uiverse-inner-navy {
+            background-color: #0B1F44;
+            border-radius: 20px;
+            transition: all 0.2s;
+            width: 100%;
+            height: 100%;
+        }
+
+        .uiverse-inner-dark:hover, .uiverse-inner-navy:hover {
+            transform: scale(0.98);
+        }
+
+        .uiverse-card:hover {
+            box-shadow: 0px 0px 30px 1px rgba(0, 255, 117, 0.35);
+        }
+
+        .uiverse-card-brand:hover {
+            box-shadow: 0px 0px 30px 1px rgba(255, 42, 109, 0.40);
+        }
+
+        .uiverse-btn-wrapper {
+            background-image: linear-gradient(163deg, #00ff75 0%, #3700ff 100%);
+            border-radius: 16px;
+            padding: 2px;
+            transition: all 0.3s;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .uiverse-btn-wrapper:hover {
+            box-shadow: 0px 0px 25px 1px rgba(0, 255, 117, 0.40);
+        }
+
+        .uiverse-btn-inner {
+            background-color: #121824;
+            border-radius: 14px;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .uiverse-btn-inner:hover {
+            transform: scale(0.98);
+        }
+
+        /* Floating Curved Bottom Navigation Bar Styling */
+        .floating-nav-dock {
+            margin-left: 12px;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(11, 31, 68, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-800 bg-slate-950 flex flex-col justify-center items-center min-h-screen p-0 sm:p-4 overflow-x-hidden">
+
+    <!-- DESKTOP TOP BAR -->
+    <header class="w-full max-w-6xl mb-3 px-4 py-2.5 flex items-center justify-between text-white text-xs sm:text-sm bg-navy-dark/95 backdrop-blur rounded-2xl border border-slate-800 hidden sm:flex shadow-xl z-30">
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 font-black text-white text-base tracking-tight">
+                <!-- Mini Custom Van Logo Icon matching Njiani artwork -->
+                <div class="w-9 h-9 rounded-xl bg-black border border-pinkaccent flex items-center justify-center p-0.5 shadow-xs overflow-hidden">
+                    <svg viewBox="0 0 100 80" class="w-full h-full">
+                        <path d="M10 55 L25 22 L75 22 L90 55 L90 68 L10 68 Z" fill="#ffffff" stroke="#000" stroke-width="2"/>
+                        <path d="M28 26 L52 26 L50 44 L25 44 Z" fill="#0A0D14"/>
+                        <path d="M54 26 L74 26 L78 44 L52 44 Z" fill="#0A0D14"/>
+                        <text x="30" y="41" font-family="'Inter', sans-serif" font-weight="900" font-size="14" fill="#FF2A6D">13</text>
+                        <path d="M12 50 L88 50 L88 58 L12 58 Z" fill="#FF2A6D"/>
+                        <circle cx="28" cy="68" r="10" fill="#18181B" stroke="#FF2A6D" stroke-width="2"/>
+                        <circle cx="72" cy="68" r="10" fill="#18181B" stroke="#FF2A6D" stroke-width="2"/>
+                    </svg>
+                </div>
+                <span>NJIANI</span>
+            </div>
+
+            <!-- County Selector -->
+            <div class="relative flex items-center bg-navy-light px-3 py-1 rounded-xl border border-blue-400/20">
+                <i class="fa-solid fa-location-dot text-orange mr-2 text-xs"></i>
+                <select id="topCountySelector" onchange="changeActiveCounty(this.value)" class="bg-transparent text-white font-semibold text-xs border-none outline-none cursor-pointer">
+                    <option value="All" class="bg-navy text-white" selected>🇰🇪 All Counties</option>
+                    <option value="Nairobi" class="bg-navy text-white">Nairobi Metro</option>
+                    <option value="Mombasa" class="bg-navy text-white">Mombasa & Coast</option>
+                    <option value="Kisumu" class="bg-navy text-white">Kisumu & Lake Region</option>
+                    <option value="Nakuru" class="bg-navy text-white">Nakuru</option>
+                    <option value="Eldoret" class="bg-navy text-white">Eldoret & North Rift</option>
+                    <option value="Nyeri" class="bg-navy text-white">Nyeri & Mount Kenya</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- GPS Button -->
+            <button onclick="requestLiveGPS()" class="flex items-center gap-1.5 px-3 py-1.5 bg-orange text-navy font-bold rounded-xl hover:bg-orange-light transition-all shadow">
+                <i class="fa-solid fa-crosshairs"></i>
+                <span id="gpsBtnLabel">Use Live GPS</span>
+            </button>
+
+            <!-- Layout Switcher -->
+            <button onclick="toggleDeviceLayout()" class="hover:text-orange transition-colors flex items-center gap-1.5 font-semibold bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
+                <i class="fa-solid fa-desktop text-xs"></i> <span id="layoutBtnText">Expand View</span>
+            </button>
+
+            <!-- Offline Simulator -->
+            <button id="globalNetworkBtn" onclick="toggleNetworkStatus()" class="flex items-center gap-2 px-3 py-1.5 rounded-xl font-semibold transition-all bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" id="netPulse"></span>
+                <span id="netStatusText">Online</span>
+            </button>
+
+            <!-- Role Switch -->
+            <button onclick="showLandingScreen()" class="p-2 text-slate-400 hover:text-white" title="Return to Role Selection">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APPLICATION CONTAINER -->
+    <div id="appContainer" class="w-full phone-frame bg-white flex flex-col relative overflow-hidden transition-all duration-300 my-auto shadow-2xl">
+
+        <!-- ================= 1. OPENING LANDING & ROLE SELECTION SCREEN ================= -->
+        <div id="landingScreen" class="absolute inset-0 z-50 bg-black flex flex-col justify-between p-6 text-white text-center transition-all duration-500">
+            <!-- Top Bar: Clean status indicators -->
+            <div class="w-full flex justify-between items-center text-xs text-slate-400 font-mono">
+                <div class="flex items-center gap-1.5 text-pinkaccent font-bold">
+                    <i class="fa-solid fa-location-arrow text-[10px]"></i>
+                    <span>GPS Ready</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-300">
+                    <i class="fa-solid fa-wifi text-emerald-400"></i>
+                    <i class="fa-solid fa-battery-three-quarters"></i>
+                </div>
+            </div>
+
+            <!-- Central Branding & Main "Travel" Action with OFFICIAL NJIANI LOGO -->
+            <div class="flex flex-col items-center my-auto w-full max-w-xs mx-auto">
+                <!-- EXACT SVG RECREATION OF THE OFFICIAL NJIANI LOGO (WHITE VAN + PINK 13 + ARCHED NJIANI TEXT) -->
+                <div class="w-64 h-64 mb-1 flex items-center justify-center relative">
+                    <svg viewBox="0 0 400 400" class="w-full h-full drop-shadow-[0_15px_30px_rgba(255,42,109,0.35)]">
+                        <!-- Dark Background Canvas -->
+                        <rect width="400" height="400" rx="32" fill="#000000"/>
+                        
+                        <!-- Van Graphic Group -->
+                        <g transform="translate(10, 10)">
+                            <!-- Tire Ground Shadows -->
+                            <ellipse cx="230" cy="305" rx="120" ry="16" fill="#000000" opacity="0.9"/>
+
+                            <!-- Rear Bumper Pipe Bar with Pink End Caps -->
+                            <path d="M 40,250 L 290,285" stroke="#475569" stroke-width="14" stroke-linecap="round"/>
+                            <path d="M 40,250 L 290,285" stroke="#0F172A" stroke-width="10" stroke-linecap="round"/>
+                            <circle cx="290" cy="285" r="7" fill="#FF2A6D"/>
+                            <circle cx="40" cy="250" r="7" fill="#FF2A6D"/>
+
+                            <!-- Main Vehicle Body Outline & Paint (White HiAce Van) -->
+                            <path d="M 120,70 
+                                     L 270,120 
+                                     Q 320,135 340,165 
+                                     L 345,210 
+                                     L 330,265 
+                                     L 220,285 
+                                     L 110,240 
+                                     L 100,100 
+                                     Z" fill="#F8FAFC" stroke="#000000" stroke-width="4"/>
+
+                            <!-- Roof Line Contour -->
+                            <path d="M 120,70 Q 200,95 270,120" stroke="#CBD5E1" stroke-width="3" fill="none"/>
+                            
+                            <!-- Rear Glass (Dark Tinted) -->
+                            <path d="M 115,92 L 235,128 L 225,185 L 110,165 Z" fill="#090D16" stroke="#000000" stroke-width="3"/>
+                            <path d="M 115,92 L 235,128 L 225,185 L 110,165 Z" fill="#1E293B" opacity="0.4"/>
+
+                            <!-- PINK #13 DECAL ON REAR WINDOW -->
+                            <g transform="translate(135, 95) rotate(7)">
+                                <text x="0" y="55" font-family="'Inter', sans-serif" font-weight="900" font-size="58" fill="#FF2A6D" stroke="#000000" stroke-width="3" letter-spacing="-2">13</text>
+                                <text x="0" y="55" font-family="'Inter', sans-serif" font-weight="900" font-size="58" fill="none" stroke="#FFFFFF" stroke-width="1" letter-spacing="-2">13</text>
+                            </g>
+
+                            <!-- Toyota Emblem & Rear License Plate -->
+                            <ellipse cx="170" cy="192" rx="7" ry="4" fill="#E2E8F0" stroke="#000000" stroke-width="1.5"/>
+                            <rect x="135" y="202" width="70" height="18" rx="3" fill="#E2E8F0" stroke="#000000" stroke-width="2"/>
+                            <rect x="148" y="206" width="42" height="10" rx="1" fill="#FACC15" stroke="#000000" stroke-width="1"/>
+
+                            <!-- Pink Chevron Warning Stripes on Rear Panels -->
+                            <path d="M 108,188 L 126,188 L 116,212 L 108,212 Z" fill="#FF2A6D"/>
+                            <path d="M 124,188 L 134,188 L 124,212 L 116,212 Z" fill="#000000"/>
+                            
+                            <path d="M 210,202 L 228,202 L 220,224 L 210,224 Z" fill="#FF2A6D"/>
+                            <path d="M 224,202 L 232,202 L 224,224 L 220,224 Z" fill="#000000"/>
+
+                            <!-- Vertical Tail Lights -->
+                            <rect x="226" y="190" width="12" height="42" rx="3" fill="#FF2A6D" stroke="#000000" stroke-width="2"/>
+                            <rect x="228" y="194" width="8" height="12" fill="#FFFFFF" opacity="0.8"/>
+                            
+                            <!-- Side Windows (Dark Tint) -->
+                            <path d="M 242,132 L 325,160 L 332,192 L 232,182 Z" fill="#090D16" stroke="#000000" stroke-width="2"/>
+                            <path d="M 330,165 L 342,170 L 342,198 L 334,195 Z" fill="#090D16" stroke="#000000" stroke-width="2"/>
+
+                            <!-- Pink "XIII" Side Decal -->
+                            <text x="248" y="238" font-family="'Inter', sans-serif" font-weight="900" font-size="24" fill="#FF2A6D" stroke="#000000" stroke-width="1" letter-spacing="2" transform="rotate(7, 248, 238)">XIII</text>
+
+                            <!-- Off-Road Wheels with Maxxis Lettering & Rims -->
+                            <g transform="translate(195, 240)">
+                                <ellipse cx="25" cy="25" rx="32" ry="34" fill="#18181B" stroke="#000000" stroke-width="3"/>
+                                <ellipse cx="25" cy="25" rx="20" ry="22" fill="#27272A" stroke="#FF2A6D" stroke-width="2"/>
+                                <ellipse cx="25" cy="25" rx="10" ry="11" fill="#000000"/>
+                                <path d="M 5,22 A 22,22 0 0,1 42,18" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3 3"/>
+                            </g>
+
+                            <g transform="translate(295, 220)">
+                                <ellipse cx="20" cy="20" rx="22" ry="26" fill="#18181B" stroke="#000000" stroke-width="3"/>
+                                <ellipse cx="20" cy="20" rx="13" ry="16" fill="#27272A" stroke="#FF2A6D" stroke-width="2"/>
+                                <ellipse cx="20" cy="20" rx="6" ry="8" fill="#000000"/>
+                            </g>
+                        </g>
+
+                        <!-- ARCHED "N J I A N I" TEXT UNDERNEATH -->
+                        <path id="njianiArcLanding" d="M 60,355 A 190,190 0 0,0 340,355" fill="none"/>
+                        <text font-family="'Georgia', 'Times New Roman', serif" font-weight="900" font-size="38" fill="#FFFFFF" letter-spacing="8">
+                            <textPath href="#njianiArcLanding" startOffset="50%" text-anchor="middle">
+                                NJIANI
+                            </textPath>
+                        </text>
+                    </svg>
+                </div>
+
+                <p class="text-pinkaccent font-extrabold text-xs tracking-widest uppercase mb-1">Every Journey Starts Here</p>
+                <p class="text-slate-300 text-xs leading-relaxed mb-6">
+                    Intelligent Kenya mobility platform. Live fares, stage finder, route tracking, and vehicle charter.
+                </p>
+
+                <!-- PRIMARY CENTRAL ACTION BUTTON: "TRAVEL" -->
+                <div class="uiverse-card w-full">
+                    <button onclick="enterCommuterApp()" class="uiverse-inner-dark w-full py-4 text-white font-black text-base flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-location-arrow text-emerald-400 text-lg"></i>
+                        <span>Travel</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BOTTOM AREA: DISCRETE LOWER-LEFT SACCO/CONDUCTOR BUTTON -->
+            <div class="w-full flex items-end justify-between relative pt-4">
+                <div class="uiverse-btn-wrapper max-w-[175px]">
+                    <button onclick="openConductorLoginModal()" class="uiverse-btn-inner flex items-center justify-center gap-2 px-3.5 py-2.5 text-slate-200 hover:text-orange text-xs font-bold cursor-pointer">
+                        <i class="fa-solid fa-id-card-clip text-orange"></i>
+                        <span>Sacco / Conductor</span>
+                    </button>
+                </div>
+
+                <span class="text-[10px] text-slate-500 font-medium">v4.5 Mobility</span>
+            </div>
+        </div>
+
+        <!-- MOBILE STATUS BAR -->
+        <div class="bg-navy text-white px-5 pt-3 pb-1 flex justify-between items-center text-xs font-semibold select-none z-30 shrink-0">
+            <span class="text-white font-black flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-pinkaccent"></span> NJIANI
+            </span>
+            <div class="flex items-center gap-2 text-[11px] text-slate-300">
+                <i class="fa-solid fa-location-arrow text-pinkaccent text-[10px]"></i>
+                <i class="fa-solid fa-wifi"></i>
+                <i class="fa-solid fa-battery-three-quarters text-emerald-400"></i>
+            </div>
+        </div>
+
+        <!-- BROADCAST PASSENGER ALERT ANNOUNCEMENT BANNER -->
+        <div id="passengerAlertBanner" class="hidden bg-amber-500 text-navy px-4 py-2 text-xs font-bold flex items-center justify-between z-30 shadow-md">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <i class="fa-solid fa-triangle-exclamation text-navy animate-pulse shrink-0"></i>
+                <span id="alertBannerText" class="truncate">SACCO Alert: Kencom Stage temporarily shifted to City Hall Way.</span>
+            </div>
+            <button onclick="closeAlertBanner()" class="text-navy hover:text-black font-black p-0.5 ml-2 shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- NETWORK STATUS BANNER -->
+        <div id="networkBanner" class="bg-emerald-600 text-white px-4 py-1 text-xs flex items-center justify-between font-medium z-30">
+            <div class="flex items-center gap-2">
+                <i id="bannerNetIcon" class="fa-solid fa-wifi text-[10px]"></i>
+                <span id="bannerNetText">Online — Live SACCO Pricing Active</span>
+            </div>
+            <button onclick="toggleNetworkStatus()" class="underline text-[10px]">Toggle</button>
+        </div>
+
+        <!-- APP SCROLLABLE BODY -->
+        <main id="mainScrollArea" class="flex-1 overflow-y-auto bg-slate-50 relative flex flex-col">
+
+            <!-- ================= TAB 1: HOME ================= -->
+            <section id="tab-home" class="tab-page p-4 flex flex-col gap-4 pb-28">
+                <!-- User Greeting & SACCO Badge -->
+                <div class="flex items-center justify-between pt-1">
+                    <div>
+                        <h2 class="text-lg font-black text-navy flex items-center gap-2">
+                            Habari, Commuter <span class="animate-pulse">👋</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 font-medium">Where do you want to travel today?</p>
+                    </div>
+                    <button onclick="openConductorLoginModal()" class="flex items-center gap-1.5 bg-navy text-orange px-3 py-1.5 rounded-2xl text-xs font-bold shadow hover:bg-navy-light">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                        <span id="homeSaccoPortalBtnLabel">SACCO Portal</span>
+                    </button>
+                </div>
+
+                <!-- Dynamic Pricing Highlight Card -->
+                <div class="bg-gradient-to-r from-navy via-navy-dark to-black text-white rounded-3xl p-4 shadow-lg border border-pinkaccent/30 relative overflow-hidden">
+                    <div class="flex items-center justify-between relative z-10">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-pinkaccent text-white flex items-center justify-center font-black text-lg shadow">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-pinkaccent text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Live Conductor Rates</span>
+                                    <span id="activeRegimeBadge" class="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded-full">REGULAR (1.0x)</span>
+                                </div>
+                                <p class="text-xs font-bold text-white mt-1">Directly Published by SACCO Crew</p>
+                                <p class="text-[10px] text-slate-300">Peak, rain surcharge and stage alerts update instantly.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPS Location Banner -->
+                <div class="bg-white rounded-2xl p-3 border border-slate-200 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-orange/20 text-orange flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-location-crosshairs text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Current Location</p>
+                            <p id="homeGpsStatusText" class="text-xs font-bold text-navy">Nairobi CBD (Central Stage)</p>
+                        </div>
+                    </div>
+                    <button onclick="requestLiveGPS()" class="px-3 py-1 bg-navy text-orange font-bold text-xs rounded-xl hover:bg-navy-light">
+                        Locate
+                    </button>
+                </div>
+
+                <!-- Search Input Bar -->
+                <div class="relative shadow-xs rounded-2xl">
+                    <div class="relative flex items-center">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 text-slate-400 text-sm"></i>
+                        <input id="homeSearchInput" type="text" onkeyup="handleHomeSearch(this.value)" placeholder="Search Kencom, Super Metro, Mwembe Tayari, Nakuru..." class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-navy">
+                        <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-3 text-slate-400 hover:text-slate-600 p-1">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
+                    <div id="searchDropdown" class="hidden absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-40 overflow-hidden max-h-64 overflow-y-auto"></div>
+                </div>
+
+                <!-- Action Cards Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="uiverse-card-brand">
+                        <button onclick="switchTab('search')" class="uiverse-inner-navy p-3.5 text-left flex flex-col gap-2 group cursor-pointer">
+                            <div class="w-9 h-9 rounded-xl bg-orange/20 text-orange flex items-center justify-center text-base group-hover:bg-orange group-hover:text-navy transition-colors">
+                                <i class="fa-solid fa-route"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-xs">Fares & Routes</h3>
+                                <p class="text-[10px] text-slate-300">Live conductor prices</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="uiverse-card">
+                        <button onclick="switchTab('charter')" class="uiverse-inner-dark p-3.5 text-left flex flex-col gap-2 group cursor-pointer">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-base group-hover:bg-emerald-400 group-hover:text-navy transition-colors">
+                                <i class="fa-solid fa-bus-simple"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-xs">Vehicle Charter</h3>
+                                <p class="text-[10px] text-slate-300">14 to 51 seat capacity</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="uiverse-card-brand">
+                        <button onclick="showStageDirectoryModal()" class="uiverse-inner-navy p-3.5 text-left flex flex-col gap-2 group cursor-pointer">
+                            <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center text-base group-hover:bg-blue-400 group-hover:text-navy transition-colors">
+                                <i class="fa-solid fa-map-pin"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-xs">Stage Directory</h3>
+                                <p class="text-[10px] text-slate-300">Nationwide boarding bays</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="uiverse-card">
+                        <button onclick="switchTab('assistant')" class="uiverse-inner-dark p-3.5 text-left flex flex-col gap-2 group cursor-pointer">
+                            <div class="w-9 h-9 rounded-xl bg-pinkaccent/20 text-pinkaccent flex items-center justify-center text-base group-hover:bg-pinkaccent group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-xs">AI Assistant</h3>
+                                <p class="text-[10px] text-slate-300">Sheng & Swahili guidance</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Featured Routes -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-black text-navy text-xs uppercase tracking-wider">Popular Transit Routes</h3>
+                        <button onclick="switchTab('search')" class="text-xs font-bold text-orange hover:underline">View All</button>
+                    </div>
+                    <div id="homeFeaturedRoutes" class="flex flex-col gap-2.5"></div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: FARES & ROUTES PAGE ================= -->
+            <section id="tab-search" class="tab-page hidden p-4 flex flex-col gap-4 pb-28">
+                <!-- Page Header -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-black text-navy">Fares & Routes Finder</h2>
+                        <p class="text-xs text-slate-500">Live conductor fares & stage pricing</p>
+                    </div>
+                    <span id="routeCountLabel" class="bg-navy text-orange text-[10px] font-black px-2.5 py-1 rounded-full shadow">6 Routes</span>
+                </div>
+
+                <!-- DESTINATION & NEAREST STAGE FINDER -->
+                <div class="bg-gradient-to-br from-navy via-navy-dark to-black text-white p-4 rounded-3xl shadow-lg border border-pinkaccent/30 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-pinkaccent text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-compass text-pinkaccent"></i> Destination & Nearest Stage Finder
+                        </h3>
+                        <span class="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded-full">GPS Auto-Stage</span>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] font-bold text-slate-300 block">Where are you going?</label>
+                        <div class="relative flex items-center">
+                            <i class="fa-solid fa-location-dot absolute left-3.5 text-orange text-xs"></i>
+                            <input id="fareDestInput" type="text" onkeyup="calculateDestinationAndNearestStage()" placeholder="Enter destination (e.g. Rongai, Thika, Nyeri, Kisumu, Westlands)..." class="w-full pl-9 pr-24 py-2.5 bg-navy-light text-white placeholder-slate-400 border border-blue-400/30 rounded-2xl text-xs font-semibold focus:outline-none focus:border-orange">
+                            <button onclick="requestLiveGPS(); calculateDestinationAndNearestStage();" class="absolute right-1.5 px-2.5 py-1 bg-orange text-navy font-bold text-[10px] rounded-xl hover:bg-amber-400 transition-all">
+                                <i class="fa-solid fa-crosshairs"></i> GPS
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Destination Chips -->
+                    <div class="flex gap-1.5 overflow-x-auto text-[10px] font-bold pt-1 pb-1">
+                        <span class="text-slate-400 self-center text-[9px] mr-1">Quick:</span>
+                        <button onclick="selectQuickDestination('Rongai')" class="px-2.5 py-1 bg-navy-light hover:bg-orange hover:text-navy border border-blue-400/20 text-slate-200 rounded-xl transition-all">Rongai</button>
+                        <button onclick="selectQuickDestination('Thika')" class="px-2.5 py-1 bg-navy-light hover:bg-orange hover:text-navy border border-blue-400/20 text-slate-200 rounded-xl transition-all">Thika</button>
+                        <button onclick="selectQuickDestination('Nyeri')" class="px-2.5 py-1 bg-navy-light hover:bg-orange hover:text-navy border border-blue-400/20 text-slate-200 rounded-xl transition-all">Nyeri</button>
+                        <button onclick="selectQuickDestination('Kisumu')" class="px-2.5 py-1 bg-navy-light hover:bg-orange hover:text-navy border border-blue-400/20 text-slate-200 rounded-xl transition-all">Kisumu</button>
+                    </div>
+
+                    <!-- Calculated Stage Result Card -->
+                    <div id="destCalcResultCard" class="bg-navy-light/90 p-3 rounded-2xl border border-blue-400/30 flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-orange text-navy font-bold flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-street-view"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-slate-300 font-semibold block">Nearest Boarding Stage</span>
+                                    <h4 id="destNearestStageName" class="font-bold text-white text-xs">Kencom Stage (CBD)</h4>
+                                </div>
+                            </div>
+                            <span id="destStageDistance" class="bg-orange/20 text-orange text-[10px] font-black px-2 py-0.5 rounded-full">250m Walk</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-1 text-[10px] text-center pt-2 border-t border-blue-800/60">
+                            <div class="bg-navy p-1.5 rounded-xl border border-blue-900">
+                                <span class="text-slate-400 block text-[9px]">Regular Rate</span>
+                                <span id="destFareRegular" class="font-black text-emerald-400 text-xs">KSh 100</span>
+                            </div>
+                            <div class="bg-navy p-1.5 rounded-xl border border-blue-900">
+                                <span class="text-slate-400 block text-[9px]">Peak Hour</span>
+                                <span id="destFarePeak" class="font-black text-orange text-xs">KSh 135</span>
+                            </div>
+                            <div class="bg-navy p-1.5 rounded-xl border border-blue-900">
+                                <span class="text-slate-400 block text-[9px]">Rain / Surge</span>
+                                <span id="destFareRain" class="font-black text-amber-300 text-xs">KSh 150</span>
+                            </div>
+                        </div>
+
+                        <button onclick="mapCalculatedRoute()" class="w-full py-2 bg-orange text-navy font-black text-xs rounded-xl hover:bg-amber-400 transition-all flex items-center justify-center gap-1.5 shadow mt-1">
+                            <i class="fa-solid fa-map-location-dot"></i> View Journey Track on Map
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Filter Bar -->
+                <div class="relative shadow-xs rounded-2xl">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+                    <input id="faresSearchInput" type="text" onkeyup="filterFaresAndRoutes()" placeholder="Search Rongai, Super Metro, Thika, Easy Coach..." class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-navy">
+                </div>
+
+                <!-- Time / Fare Regime Filter Pills -->
+                <div class="flex items-center gap-1 bg-slate-200 p-1 rounded-2xl text-xs font-bold">
+                    <button id="filterBtn-all" onclick="setRouteFilter('all')" class="flex-1 py-1.5 rounded-xl bg-white text-navy shadow-xs font-bold transition-all">All</button>
+                    <button id="filterBtn-urban" onclick="setRouteFilter('urban')" class="flex-1 py-1.5 rounded-xl text-slate-600 hover:text-navy transition-all">Urban</button>
+                    <button id="filterBtn-intercity" onclick="setRouteFilter('intercity')" class="flex-1 py-1.5 rounded-xl text-slate-600 hover:text-navy transition-all">Intercity</button>
+                    <button id="filterBtn-saved" onclick="setRouteFilter('saved')" class="flex-1 py-1.5 rounded-xl text-slate-600 hover:text-navy transition-all">Favourites</button>
+                </div>
+
+                <!-- Route Cards List -->
+                <div id="routeCardsContainer" class="flex flex-col gap-3"></div>
+            </section>
+
+            <!-- ================= TAB 3: MAPS & TRACK MOTION PAGE ================= -->
+            <section id="tab-map" class="tab-page hidden flex flex-col h-full bg-slate-100 pb-28">
+                <!-- Map Top Bar Controls -->
+                <div class="p-3 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+                    <div>
+                        <h3 id="mapTitleText" class="font-black text-navy text-xs">NJIANI Interactive Transit Map</h3>
+                        <p class="text-[10px] text-slate-500">Stages, route polylines & track motion</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <!-- Map Tile Layer Toggle -->
+                        <button onclick="toggleMapTileLayer()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-xl flex items-center gap-1 border border-slate-300">
+                            <i class="fa-solid fa-layer-group text-orange"></i>
+                            <span id="mapTileLabel">Google Roads</span>
+                        </button>
+                        <!-- Locate GPS -->
+                        <button onclick="requestLiveGPS()" class="p-2 bg-orange text-navy rounded-xl text-xs font-bold shadow hover:bg-amber-400" title="Center on GPS">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LEAFLET CANVAS -->
+                <div id="leafletMap" class="w-full h-[480px] bg-slate-200 relative z-10"></div>
+
+                <!-- FLOATING ANIMATED TRACK MOTION DRAWER -->
+                <div class="p-4 bg-white border-t border-slate-200 shadow-2xl rounded-t-3xl -mt-6 z-20 flex flex-col gap-3">
+                    <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto"></div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <button id="modeMatatuBtn" onclick="setNavigationMode('matatu')" class="px-3 py-1 bg-navy text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-bus text-orange"></i> Drive
+                            </button>
+                            <button id="modeWalkBtn" onclick="setNavigationMode('walk')" class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1 hover:bg-slate-200">
+                                <i class="fa-solid fa-person-walking text-navy"></i> Walking
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-xl text-xs font-bold">
+                            <span class="text-[10px] text-slate-400">Speed:</span>
+                            <button onclick="setSimulationSpeed(1)" id="speed1x" class="px-1.5 py-0.5 bg-white text-navy rounded shadow-xs font-bold">1x</button>
+                            <button onclick="setSimulationSpeed(2)" id="speed2x" class="px-1.5 py-0.5 text-slate-600">2x</button>
+                            <button onclick="setSimulationSpeed(5)" id="speed5x" class="px-1.5 py-0.5 text-slate-600">5x</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div id="motionIconBox" class="w-10 h-10 rounded-2xl bg-orange/20 text-orange flex items-center justify-center text-lg font-bold">
+                                <i id="motionIcon" class="fa-solid fa-bus"></i>
+                            </div>
+                            <div>
+                                <p id="navStepTitle" class="font-bold text-navy text-xs">Super Metro — Rongai Express</p>
+                                <p id="navStepDesc" class="text-[11px] text-slate-500">Boarding at Kencom Stage Bay 2</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="navDistanceRemaining" class="text-xs font-black text-navy block">18.5 km</span>
+                            <span id="navTimeRemaining" class="text-[10px] font-bold text-orange">Est. 45 min</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div id="motionProgressBar" class="bg-orange h-full w-0 transition-all duration-300"></div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="startMotionBtn" onclick="toggleMotionSimulation()" class="py-2.5 bg-navy text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-navy-light shadow">
+                            <i id="playPauseIcon" class="fa-solid fa-play text-orange"></i> <span id="playPauseText">Start Track</span>
+                        </button>
+                        <button onclick="resetMotionSimulation()" class="py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 hover:bg-slate-200">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                        <button onclick="showStageDirectoryModal()" class="py-2.5 bg-softblue text-navy rounded-xl font-bold text-xs flex items-center justify-center gap-1 hover:bg-blue-100">
+                            <i class="fa-solid fa-list-ul"></i> All Stages
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: VEHICLE CHARTER SERVICE ================= -->
+            <section id="tab-charter" class="tab-page hidden p-4 flex flex-col gap-4 pb-28">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-navy">Vehicle Charter Service</h2>
+                        <p class="text-xs text-slate-500">Hire full vans & buses by seat capacity</p>
+                    </div>
+                    <span class="bg-orange/20 text-orange font-bold text-[10px] px-2.5 py-1 rounded-full">Nationwide</span>
+                </div>
+
+                <!-- Distance Estimator -->
+                <div class="bg-navy text-white p-4 rounded-3xl shadow-md flex flex-col gap-3">
+                    <h3 class="font-bold text-xs text-orange uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-calculator"></i> Custom Charter Estimator
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="text-[10px] text-slate-300 font-semibold block mb-1">Pickup Origin</label>
+                            <select id="charterOriginSelect" onchange="calculateCharterEstimate()" class="w-full bg-navy-light text-white p-2.5 rounded-xl border border-blue-400/20 text-xs font-semibold outline-none">
+                                <option value="Nairobi">Nairobi</option>
+                                <option value="Mombasa">Mombasa</option>
+                                <option value="Kisumu">Kisumu</option>
+                                <option value="Nakuru">Nakuru</option>
+                                <option value="Eldoret">Eldoret</option>
+                                <option value="Nyeri">Nyeri</option>
+                                <option value="Machakos">Machakos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-300 font-semibold block mb-1">Destination</label>
+                            <select id="charterDestSelect" onchange="calculateCharterEstimate()" class="w-full bg-navy-light text-white p-2.5 rounded-xl border border-blue-400/20 text-xs font-semibold outline-none">
+                                <option value="Naivasha">Naivasha (90 km)</option>
+                                <option value="Nakuru">Nakuru (160 km)</option>
+                                <option value="Mombasa">Mombasa (480 km)</option>
+                                <option value="Kisumu">Kisumu (350 km)</option>
+                                <option value="Eldoret">Eldoret (310 km)</option>
+                                <option value="Diani">Diani Beach (500 km)</option>
+                                <option value="Nanyuki">Nanyuki (200 km)</option>
+                                <option value="Malindi">Malindi (590 km)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-navy-light p-3 rounded-2xl border border-blue-400/20 flex justify-between items-center text-xs">
+                        <div>
+                            <p class="text-[10px] text-slate-300">Est. Distance & Time</p>
+                            <p id="charterDistanceText" class="font-bold text-white text-sm">160 km (3 hrs 15 min)</p>
+                        </div>
+                        <i class="fa-solid fa-route text-orange text-lg"></i>
+                    </div>
+                </div>
+
+                <!-- Vehicles List -->
+                <div>
+                    <h3 class="font-bold text-navy text-xs uppercase tracking-wider mb-2">Select Vehicle Capacity</h3>
+                    <div id="charterVehiclesList" class="flex flex-col gap-3"></div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: SACCO CONDUCTOR PORTAL ================= -->
+            <section id="tab-sacco" class="tab-page hidden p-4 flex flex-col gap-4 pb-28">
+                <!-- SACCO Dashboard Content -->
+                <div id="saccoDashboardView" class="flex flex-col gap-4">
+                    <!-- Crew Header -->
+                    <div class="bg-navy text-white p-4 rounded-3xl shadow-lg border border-blue-900/40 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-orange text-navy flex items-center justify-center font-black text-xl shadow">
+                                <i class="fa-solid fa-id-card-clip"></i>
+                            </div>
+                            <div>
+                                <span id="portalSaccoBadge" class="bg-orange text-navy text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Super Metro Sacco</span>
+                                <h3 id="portalCrewTitle" class="font-black text-white text-sm mt-0.5">Manager: Admin (Badge #SM-NBI-408)</h3>
+                                <p class="text-[10px] text-slate-300">Active SACCO Management Portal</p>
+                            </div>
+                        </div>
+                        <button onclick="logoutConductorPortal()" class="text-slate-300 hover:text-white font-bold p-2 text-xs flex items-center gap-1 bg-red-500/20 text-red-300 rounded-xl">
+                            <i class="fa-solid fa-power-off"></i> Exit
+                        </button>
+                    </div>
+
+                    <!-- SACCO Fleet Switcher -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col gap-2">
+                        <label class="font-bold text-navy text-xs uppercase tracking-wider block">Select Active SACCO Fleet</label>
+                        <select id="saccoFleetSelector" onchange="switchSaccoFleet(this.value)" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs text-navy outline-none focus:border-navy">
+                            <option value="Super Metro">Super Metro Sacco</option>
+                            <option value="Citi Hoppa">Citi Hoppa Sacco</option>
+                            <option value="2N Sacco">2N Sacco (Nyeri - Nairobi)</option>
+                            <option value="Easy Coach">Easy Coach Express</option>
+                            <option value="Transline Galaxy">Transline Galaxy Sacco</option>
+                            <option value="Metro Trans">Metro Trans Sacco</option>
+                            <option value="Lopha Sacco">Lopha Sacco (Ruiru - CBD)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Fare Regime Multipliers -->
+                    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col gap-3">
+                        <h3 class="font-bold text-navy text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-sliders text-orange"></i> Live Fare Multiplier Regime
+                        </h3>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button id="regimeBtn-normal" onclick="setFareRegime('normal', 1.0)" class="p-3 rounded-2xl border border-blue-400 bg-softblue text-navy font-bold flex flex-col gap-1 text-left shadow-xs">
+                                <div class="flex justify-between items-center">
+                                    <span>Regular Rate</span>
+                                    <i class="fa-solid fa-check text-navy"></i>
+                                </div>
+                                <span class="text-[10px] text-slate-500 font-normal">Base Rate (1.0x)</span>
+                            </button>
+
+                            <button id="regimeBtn-peak" onclick="setFareRegime('peak', 1.35)" class="p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold flex flex-col gap-1 text-left">
+                                <div class="flex justify-between items-center">
+                                    <span>Peak Hour</span>
+                                    <span class="text-[10px] bg-orange/20 text-orange px-1.5 py-0.5 rounded">+35%</span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 font-normal">Rush Hour Surge</span>
+                            </button>
+
+                            <button id="regimeBtn-rain" onclick="setFareRegime('rain', 1.50)" class="p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold flex flex-col gap-1 text-left">
+                                <div class="flex justify-between items-center">
+                                    <span>Rain Surcharge</span>
+                                    <span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">+50%</span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 font-normal">Heavy Downpour</span>
+                            </button>
+
+                            <button id="regimeBtn-night" onclick="setFareRegime('night', 1.25)" class="p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold flex flex-col gap-1 text-left">
+                                <div class="flex justify-between items-center">
+                                    <span>Late Night</span>
+                                    <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">+25%</span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 font-normal">Post 9:00 PM</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Route Specific Fare Modifier (With Increase (+) AND Decrease (-) Controls) -->
+                    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-navy text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-pen-to-square text-navy"></i> Adjust Specific Route Fares
+                            </h3>
+                            <button onclick="broadcastPriceChanges()" class="px-3 py-1 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow hover:bg-emerald-500 flex items-center gap-1">
+                                <i class="fa-solid fa-tower-cell"></i> Broadcast Prices
+                            </button>
+                        </div>
+                        <div id="saccoRouteEditorList" class="flex flex-col gap-2.5"></div>
+                    </div>
+
+                    <!-- Passenger Announcement Creator -->
+                    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col gap-3">
+                        <h3 class="font-bold text-navy text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullhorn text-orange"></i> Publish Passenger Alert Announcement
+                        </h3>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 block mb-1">Announcement Message</label>
+                            <input id="announcementInput" type="text" placeholder="e.g. Kencom stage shifted to City Hall Way due to heavy rain." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-navy">
+                        </div>
+                        <button onclick="publishPassengerAnnouncement()" class="py-2.5 bg-navy text-orange rounded-xl font-bold text-xs hover:bg-navy-light shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i> Publish Alert Banner to Commuters
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 6: AI MOBILITY ASSISTANT ================= -->
+            <section id="tab-assistant" class="tab-page hidden flex flex-col h-full bg-slate-100 pb-28">
+                <div class="p-3 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-10 shadow-xs">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-pinkaccent to-orange text-white flex items-center justify-center shadow">
+                            <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-navy text-sm">NJIANI AI Assistant</h3>
+                            <p class="text-[10px] text-slate-500">Multi-turn Sheng, Swahili & English Guidance</p>
+                        </div>
+                    </div>
+                    <span id="aiFlowStateBadge" class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Active</span>
+                </div>
+
+                <div id="chatMessages" class="flex-1 p-3 overflow-y-auto flex flex-col gap-3 min-h-[350px]">
+                    <div class="flex gap-2 max-w-[88%]">
+                        <div class="w-7 h-7 rounded-full bg-pinkaccent text-white flex items-center justify-center text-xs shrink-0 font-bold">AI</div>
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-xs text-xs text-slate-700 leading-relaxed">
+                            Jambo! I am your <strong>NJIANI AI Assistant</strong>. Ask me to find your nearest stage, check live SACCO fares, or charter a vehicle!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Action Chips for AI Assistant -->
+                <div class="p-2 bg-white/80 border-t border-slate-200 flex gap-1.5 overflow-x-auto text-[11px] font-medium shrink-0">
+                    <button onclick="sendQuickPrompt('Find nearest stage')" class="px-2.5 py-1 bg-orange text-navy font-bold rounded-full whitespace-nowrap shadow-xs border border-amber-300 hover:bg-amber-400">
+                        📍 Find Nearest Stage
+                    </button>
+                    <button onclick="sendQuickPrompt('Super Metro fare to Rongai right now?')" class="px-2.5 py-1 bg-softblue text-navy rounded-full whitespace-nowrap border border-blue-200">
+                        🚌 Super Metro Fare?
+                    </button>
+                    <button onclick="sendQuickPrompt('Charter a 14-seater to Naivasha')" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full whitespace-nowrap border border-slate-200">
+                        🚐 Charter 14-seater?
+                    </button>
+                </div>
+
+                <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2 sticky bottom-0">
+                    <input id="chatInput" type="text" onkeydown="if(event.key==='Enter'){ event.preventDefault(); sendChatMessage(); }" placeholder="Type your message or destination..." class="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-navy">
+                    <button onclick="sendChatMessage()" class="w-9 h-9 bg-navy text-white rounded-xl flex items-center justify-center hover:bg-navy-light shadow">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- FLOATING ROUNDED BOTTOM NAVIGATION DOCK -->
+        <nav class="floating-nav-dock bg-navy/95 backdrop-blur-md text-slate-300 px-3 py-2.5 flex justify-around items-center border border-slate-700/60 z-30 shrink-0">
+            <button id="nav-home" onclick="switchTab('home')" class="flex flex-col items-center gap-1 p-1 text-orange transition-colors w-14 font-bold">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-[10px] font-medium leading-none">Home</span>
+            </button>
+            <button id="nav-search" onclick="switchTab('search')" class="flex flex-col items-center gap-1 p-1 hover:text-orange transition-colors w-14">
+                <i class="fa-solid fa-route text-lg"></i>
+                <span class="text-[10px] font-medium leading-none">Fares</span>
+            </button>
+            <button id="nav-map" onclick="switchTab('map')" class="flex flex-col items-center gap-1 p-1 hover:text-orange transition-colors w-14">
+                <i class="fa-solid fa-map-location-dot text-lg"></i>
+                <span class="text-[10px] font-medium leading-none">Map</span>
+            </button>
+            <button id="nav-charter" onclick="switchTab('charter')" class="flex flex-col items-center gap-1 p-1 hover:text-orange transition-colors w-14">
+                <i class="fa-solid fa-bus-simple text-lg"></i>
+                <span class="text-[10px] font-medium leading-none">Charter</span>
+            </button>
+            <button id="nav-assistant" onclick="switchTab('assistant')" class="flex flex-col items-center gap-1 p-1 hover:text-orange transition-colors w-14 relative">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                <span class="text-[10px] font-medium leading-none">AI Assistant</span>
+            </button>
+        </nav>
+
+        <!-- ================= MODALS ================= -->
+
+        <!-- CONDUCTOR / SACCO LOGIN MODAL -->
+        <div id="conductorLoginModal" class="hidden fixed inset-0 z-50 bg-navy/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4 shadow-2xl relative border border-slate-100">
+                <button onclick="closeModal('conductorLoginModal')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+                <div class="text-center">
+                    <div class="w-14 h-14 bg-black border-2 border-pinkaccent text-orange rounded-3xl mx-auto flex items-center justify-center text-2xl font-black mb-2 shadow-md overflow-hidden p-1">
+                        <svg viewBox="0 0 100 80" class="w-full h-full">
+                            <path d="M10 55 L25 22 L75 22 L90 55 L90 68 L10 68 Z" fill="#ffffff" stroke="#000" stroke-width="2"/>
+                            <path d="M28 26 L52 26 L50 44 L25 44 Z" fill="#0A0D14"/>
+                            <text x="30" y="41" font-family="'Inter', sans-serif" font-weight="900" font-size="14" fill="#FF2A6D">13</text>
+                            <circle cx="28" cy="68" r="10" fill="#18181B" stroke="#FF2A6D" stroke-width="2"/>
+                            <circle cx="72" cy="68" r="10" fill="#18181B" stroke="#FF2A6D" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-black text-navy text-lg">NJIANI SACCO / Conductor Portal</h3>
+                    <p class="text-xs text-slate-500">Log in to modify live fares & broadcast alerts</p>
+                </div>
+
+                <!-- Error Message Box -->
+                <div id="loginErrorMsg" class="hidden p-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-xs font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-sm"></i>
+                    <span>Invalid credentials! Try Admin and 1234.</span>
+                </div>
+
+                <div class="flex flex-col gap-3 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Username</label>
+                        <input type="text" id="loginUsernameInput" placeholder="Enter username (Admin)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:outline-none focus:border-navy">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Password</label>
+                        <input type="password" id="loginPasswordInput" placeholder="Enter password (1234)" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:outline-none focus:border-navy">
+                    </div>
+                </div>
+
+                <!-- Credential Hint Box -->
+                <div class="bg-softblue/60 p-2.5 rounded-2xl border border-blue-200/60 text-[11px] text-navy font-semibold flex items-center justify-between">
+                    <span><i class="fa-solid fa-key text-orange mr-1"></i> Credentials:</span>
+                    <span class="font-mono bg-white px-2 py-0.5 rounded-lg text-navy font-bold shadow-xs">Admin / 1234</span>
+                </div>
+
+                <div class="uiverse-btn-wrapper">
+                    <button onclick="processConductorLogin()" class="uiverse-btn-inner py-3.5 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-right-to-bracket text-orange"></i> Log In to Crew Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROUTE DETAILS MODAL -->
+        <div id="routeDetailsModal" class="hidden fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-4 shadow-2xl relative">
+                <button onclick="closeModal('routeDetailsModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                
+                <div>
+                    <span id="modalRouteBadge" class="bg-orange/20 text-orange font-bold text-[10px] px-2.5 py-1 rounded-full uppercase">Super Metro</span>
+                    <h3 id="modalRouteTitle" class="font-black text-navy text-base mt-1">Nairobi CBD to Rongai</h3>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-semibold block">Conductor Fare</span>
+                        <span id="modalFareText" class="font-black text-navy text-sm">KSh 100</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-semibold block">Est. Duration</span>
+                        <span id="modalTimeText" class="font-bold text-slate-700 text-xs">45 - 65 min</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-navy text-xs uppercase tracking-wider mb-2">Stage Stops & Itinerary</h4>
+                    <div id="modalStagesList" class="flex flex-col gap-2 pl-4 border-l-2 border-slate-200 text-xs text-slate-700 font-medium"></div>
+                </div>
+
+                <button onclick="launchMapRoute()" class="w-full py-3 bg-navy text-orange font-bold text-xs rounded-2xl hover:bg-navy-light shadow flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-map-location-dot"></i> View & Track Route on Map
+                </button>
+            </div>
+        </div>
+
+        <!-- STAGE DIRECTORY MODAL -->
+        <div id="stageDirectoryModal" class="hidden fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto flex flex-col p-5 gap-4 shadow-2xl relative">
+                <button onclick="closeModal('stageDirectoryModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <h3 class="font-black text-navy text-base">Stage Directory</h3>
+                <div class="relative">
+                    <input type="text" onkeyup="filterDirectoryStages(this.value)" placeholder="Search Kencom, Mwembe Tayari, Kondele..." class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium">
+                </div>
+                <div id="directoryStagesList" class="flex flex-col gap-2 max-h-80 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- CHARTER REQUEST MODAL -->
+        <div id="charterBookingModal" class="hidden fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-4 shadow-2xl relative">
+                <button onclick="closeModal('charterBookingModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <h3 id="charterModalTitle" class="font-black text-navy text-lg">Charter Request</h3>
+                <div class="flex flex-col gap-3 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Travel Date</label>
+                        <input type="date" id="charterDate" value="2026-10-26" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Pickup Location Details</label>
+                        <input type="text" id="charterPickupDetail" placeholder="e.g. Kencom Stage or Home Pickup" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+                    </div>
+                    <div class="bg-softblue p-3 rounded-2xl border border-blue-200 flex justify-between items-center font-bold text-navy">
+                        <span>Total Estimated Charter Fare:</span>
+                        <span id="charterTotalFareText" class="text-base text-orange">KSh 18,000</span>
+                    </div>
+                </div>
+                <button onclick="confirmCharterBooking()" class="py-3 bg-navy text-white rounded-2xl font-bold text-xs hover:bg-navy-light shadow">
+                    Send Charter Request to SACCO
+                </button>
+            </div>
+        </div>
+
+        <!-- TOAST NOTIFICATION -->
+        <div id="toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 bg-navy text-white text-xs px-4 py-2.5 rounded-2xl shadow-xl border border-slate-700 z-50 flex items-center gap-2 max-w-xs transition-all">
+            <i class="fa-solid fa-circle-info text-orange"></i>
+            <span id="toastText">Notification message</span>
+        </div>
+
+    </div>
+
+    <!-- APPLICATION ENGINE -->
+    <script>
+        // ================= APPLICATION STATE =================
+        let isOnline = true;
+        let isPhoneFrame = true;
+        let activeCounty = 'All';
+        let activeRouteFilter = 'all';
+        let userLocation = { lat: -1.286389, lng: 36.817223 }; // Default Nairobi CBD
+        let map, userMarker, routePolyline, movingMarker;
+        let currentTileLayer = 'google_road';
+        let googleRoadTileLayer, googleHybridTileLayer, osmTileLayer;
+        let currentSelectedRoute = null;
+
+        // SACCO & Conductor Dynamic State
+        let isSaccoLoggedIn = false;
+        let activeSaccoFleet = 'Super Metro';
+        let activeMultiplier = 1.0;
+        let activeRegimeName = 'normal';
+
+        // Multi-turn AI Conversation State Machine
+        let isChatProcessing = false;
+        let aiContext = {
+            step: 'idle', // 'idle' | 'awaiting_destination' | 'stage_found'
+            userDestination: '',
+            detectedStage: null,
+            suggestedRoute: null
+        };
+
+        // Animated Simulation Variables
+        let isSimulating = false;
+        let simulationMode = 'matatu';
+        let simulationSpeed = 1;
+        let currentWaypointIndex = 0;
+        let simulationInterval = null;
+        let activeRouteWaypoints = [];
+
+        // KENYA DISTANCE MATRIX FOR CHARTER (KM)
+        const KENYA_DISTANCES = {
+            'Nairobi-Naivasha': 90,
+            'Nairobi-Nakuru': 160,
+            'Nairobi-Mombasa': 480,
+            'Nairobi-Kisumu': 350,
+            'Nairobi-Eldoret': 310,
+            'Nairobi-Diani': 500,
+            'Nairobi-Nanyuki': 200,
+            'Nairobi-Malindi': 590,
+            'Nairobi-Machakos': 65,
+            'Mombasa-Diani': 35,
+            'Mombasa-Malindi': 120,
+            'Kisumu-Nakuru': 190,
+            'Nakuru-Eldoret': 150
+        };
+
+        // VEHICLE CHARTER DATASET
+        const CHARTER_VEHICLES = [
+            {
+                id: 'ch-14',
+                title: 'Toyota HiAce Van (14-Seater)',
+                capacity: '14 Passengers',
+                type: 'Urban Van / Express Shuttle',
+                sacco: 'Super Metro & Metro Trans Fleet',
+                baseRatePerKm: 110,
+                baseDailyMin: 12000,
+                img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600'
+            },
+            {
+                id: 'ch-24',
+                title: 'Mitsubishi Rosa Shuttle (24-Seater)',
+                capacity: '24 Passengers',
+                type: 'Executive Midi-Bus',
+                sacco: '2N Sacco & Citi Hoppa Express',
+                baseRatePerKm: 160,
+                baseDailyMin: 18000,
+                img: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600'
+            },
+            {
+                id: 'ch-33',
+                title: 'Isuzu Swara Coach (33-Seater)',
+                capacity: '33 Passengers',
+                type: 'Medium Passenger Coach',
+                sacco: 'Lopha Sacco & Killeton Fleet',
+                baseRatePerKm: 210,
+                baseDailyMin: 25000,
+                img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600'
+            },
+            {
+                id: 'ch-51',
+                title: 'Overland Luxury Bus (51-Seater)',
+                capacity: '51 Passengers',
+                type: 'Long Distance Inter-County Bus',
+                sacco: 'Easy Coach & Transline Galaxy',
+                baseRatePerKm: 290,
+                baseDailyMin: 38000,
+                img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=600'
+            }
+        ];
+
+        // KENYA STAGES DATASET
+        const KENYA_STAGES = [
+            { id: 'stg-1', name: 'Kencom Stage (CBD)', county: 'Nairobi', lat: -1.286389, lng: 36.822223 },
+            { id: 'stg-2', name: 'Railways Terminus', county: 'Nairobi', lat: -1.290500, lng: 36.824167 },
+            { id: 'stg-3', name: 'Ambassador Stage', county: 'Nairobi', lat: -1.283889, lng: 36.824722 },
+            { id: 'stg-4', name: 'Tea Room Stage (CBD)', county: 'Nairobi', lat: -1.283000, lng: 36.827000 },
+            { id: 'stg-5', name: 'Westlands Stage', county: 'Nairobi', lat: -1.265000, lng: 36.805000 },
+            { id: 'stg-6', name: 'Rongai Main Terminus', county: 'Nairobi', lat: -1.396667, lng: 36.759444 },
+            { id: 'stg-7', name: 'Thika Main Stage', county: 'Kiambu', lat: -1.038000, lng: 37.072000 },
+            { id: 'stg-8', name: 'Mwembe Tayari Bus Park', county: 'Mombasa', lat: -4.053889, lng: 39.664444 },
+            { id: 'stg-9', name: 'Likoni Ferry Terminal', county: 'Mombasa', lat: -4.081111, lng: 39.663611 },
+            { id: 'stg-10', name: 'Kisumu Main Bus Park', county: 'Kisumu', lat: -0.101944, lng: 34.755833 },
+            { id: 'stg-11', name: 'Nakuru Main Bus Terminus', county: 'Nakuru', lat: -0.283333, lng: 36.066667 },
+            { id: 'stg-12', name: 'Eldoret Main Bus Stage', county: 'Eldoret', lat: 0.516667, lng: 35.283333 }
+        ];
+
+        // KENYA ROUTES DATASET
+        const KENYA_ROUTES = [
+            {
+                id: '107',
+                number: 'Route 107',
+                sacco: 'Super Metro',
+                title: 'Nairobi CBD to Rongai (Waiyaki Way)',
+                county: 'Nairobi',
+                category: 'urban',
+                baseFare: 100,
+                time: '45 - 65 min',
+                boarding: 'Kencom Stage (CBD)',
+                destinations: ['rongai', 'bomas', 'galleria', 'kiserian'],
+                isSaved: true,
+                waypoints: [
+                    { name: 'Kencom Stage (CBD)', lat: -1.286389, lng: 36.822223 },
+                    { name: 'Waiyaki Way Stage', lat: -1.265000, lng: 36.805000 },
+                    { name: 'Bomas of Kenya Junction', lat: -1.338000, lng: 36.772000 },
+                    { name: 'Galleria Mall Stage', lat: -1.356000, lng: 36.765000 },
+                    { name: 'Rongai Main Terminus', lat: -1.396667, lng: 36.759444 }
+                ]
+            },
+            {
+                id: '145',
+                number: 'Route 145',
+                sacco: 'Citi Hoppa',
+                title: 'Nairobi CBD to Thika Express',
+                county: 'Nairobi',
+                category: 'urban',
+                baseFare: 90,
+                time: '35 - 50 min',
+                boarding: 'Ambassador Stage',
+                destinations: ['thika', 'roysambu', 'ku', 'juja'],
+                isSaved: false,
+                waypoints: [
+                    { name: 'Ambassador Stage', lat: -1.283889, lng: 36.824722 },
+                    { name: 'Ngara Stage', lat: -1.275000, lng: 36.828000 },
+                    { name: 'Roysambu Junction', lat: -1.218000, lng: 36.888000 },
+                    { name: 'Kenyatta University', lat: -1.180000, lng: 36.928000 },
+                    { name: 'Thika Main Stage', lat: -1.038000, lng: 37.072000 }
+                ]
+            },
+            {
+                id: '2N-1',
+                number: 'Nyeri Shuttle',
+                sacco: '2N Sacco',
+                title: 'Nairobi CBD to Nyeri Town',
+                county: 'Nyeri',
+                category: 'intercity',
+                baseFare: 450,
+                time: '2 hrs 30 min',
+                boarding: 'Tea Room Stage (CBD)',
+                destinations: ['nyeri', 'kenol', 'karatina'],
+                isSaved: true,
+                waypoints: [
+                    { name: 'Tea Room Stage (CBD)', lat: -1.283000, lng: 36.827000 },
+                    { name: 'Kenol Stage', lat: -0.910000, lng: 37.120000 },
+                    { name: 'Karatina Bus Park', lat: -0.483000, lng: 37.133000 },
+                    { name: 'Nyeri Main Stage', lat: -0.420000, lng: 36.947000 }
+                ]
+            },
+            {
+                id: 'EC-1',
+                number: 'Western Express',
+                sacco: 'Easy Coach',
+                title: 'Nairobi to Kisumu Direct',
+                county: 'Kisumu',
+                category: 'intercity',
+                baseFare: 1400,
+                time: '6 hrs 15 min',
+                boarding: 'Railways Terminus',
+                destinations: ['kisumu', 'nakuru', 'kericho'],
+                isSaved: false,
+                waypoints: [
+                    { name: 'Railways Terminus', lat: -1.290500, lng: 36.824167 },
+                    { name: 'Nakuru Highway Stop', lat: -0.283333, lng: 36.066667 },
+                    { name: 'Kericho Bus Park', lat: -0.368000, lng: 35.286000 },
+                    { name: 'Kisumu Main Bus Park', lat: -0.101944, lng: 34.755833 }
+                ]
+            },
+            {
+                id: 'TG-1',
+                number: 'Coast Shuttle',
+                sacco: 'Transline Galaxy',
+                title: 'Mwembe Tayari to Likoni Ferry',
+                county: 'Mombasa',
+                category: 'urban',
+                baseFare: 60,
+                time: '20 - 30 min',
+                boarding: 'Mwembe Tayari Bus Park',
+                destinations: ['mombasa', 'likoni', 'diani'],
+                isSaved: false,
+                waypoints: [
+                    { name: 'Mwembe Tayari Bus Park', lat: -4.053889, lng: 39.664444 },
+                    { name: 'Digo Road Stage', lat: -4.065000, lng: 39.667000 },
+                    { name: 'Likoni Ferry Terminal', lat: -4.081111, lng: 39.663611 }
+                ]
+            },
+            {
+                id: 'LOP-1',
+                number: 'Route 114',
+                sacco: 'Lopha Sacco',
+                title: 'Nairobi CBD to Ruiru Town',
+                county: 'Nairobi',
+                category: 'urban',
+                baseFare: 80,
+                time: '30 - 45 min',
+                boarding: 'Westlands Stage',
+                destinations: ['ruiru', 'kasarani', 'westlands'],
+                isSaved: false,
+                waypoints: [
+                    { name: 'Westlands Stage', lat: -1.265000, lng: 36.805000 },
+                    { name: 'Kasarani Junction', lat: -1.220000, lng: 36.895000 },
+                    { name: 'Ruiru Main Stage', lat: -1.146000, lng: 36.960000 }
+                ]
+            }
+        ];
+
+        // ================= INITIALIZATION =================
+        window.onload = function() {
+            initLeafletMap();
+            renderHomeFeatured();
+            renderRouteCards();
+            renderCharterVehicles();
+            renderDirectoryStagesList(KENYA_STAGES);
+            calculateCharterEstimate();
+            calculateDestinationAndNearestStage();
+        };
+
+        // ================= HAVERSINE DISTANCE HELPER =================
+        function calculateHaversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function findNearestStageToCoordinates(lat, lng) {
+            let nearest = KENYA_STAGES[0];
+            let minDistance = Infinity;
+
+            KENYA_STAGES.forEach(stg => {
+                const dist = calculateHaversineKm(lat, lng, stg.lat, stg.lng);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    nearest = stg;
+                }
+            });
+
+            return { stage: nearest, distanceKm: minDistance };
+        }
+
+        // ================= DESTINATION & NEAREST STAGE FINDER =================
+        function selectQuickDestination(destName) {
+            document.getElementById('fareDestInput').value = destName;
+            calculateDestinationAndNearestStage();
+        }
+
+        function calculateDestinationAndNearestStage() {
+            const destInput = document.getElementById('fareDestInput').value.toLowerCase().trim();
+            const nearestObj = findNearestStageToCoordinates(userLocation.lat, userLocation.lng);
+            const nearestStage = nearestObj.stage;
+            const distMeters = Math.round(nearestObj.distanceKm * 1000);
+            const distText = distMeters < 1000 ? `${distMeters}m Walk` : `${nearestObj.distanceKm.toFixed(1)} km`;
+
+            document.getElementById('destNearestStageName').innerText = nearestStage.name;
+            document.getElementById('destStageDistance').innerText = distText;
+
+            let matchingRoute = KENYA_ROUTES.find(r => 
+                r.destinations.some(d => destInput.includes(d)) || 
+                r.title.toLowerCase().includes(destInput)
+            ) || KENYA_ROUTES[0];
+
+            currentSelectedRoute = matchingRoute;
+
+            const baseFare = matchingRoute.baseFare || 100;
+            const fareReg = Math.round(baseFare * 1.0 * activeMultiplier);
+            const farePeak = Math.round(baseFare * 1.35 * activeMultiplier);
+            const fareRain = Math.round(baseFare * 1.50 * activeMultiplier);
+
+            document.getElementById('destFareRegular').innerText = `KSh ${fareReg}`;
+            document.getElementById('destFarePeak').innerText = `KSh ${farePeak}`;
+            document.getElementById('destFareRain').innerText = `KSh ${fareRain}`;
+        }
+
+        // ================= LANDING SCREEN LOGIC =================
+        function enterCommuterApp() {
+            const landing = document.getElementById('landingScreen');
+            landing.style.opacity = '0';
+            setTimeout(() => {
+                landing.classList.add('hidden');
+                landing.style.opacity = '1';
+            }, 500);
+            switchTab('home');
+            showToast("Welcome to NJIANI!");
+        }
+
+        function showLandingScreen() {
+            const landing = document.getElementById('landingScreen');
+            landing.classList.remove('hidden');
+        }
+
+        function openConductorLoginModal() {
+            document.getElementById('loginErrorMsg').classList.add('hidden');
+            document.getElementById('conductorLoginModal').classList.remove('hidden');
+        }
+
+        function processConductorLogin() {
+            const username = document.getElementById('loginUsernameInput').value.trim();
+            const password = document.getElementById('loginPasswordInput').value.trim();
+            const errorMsg = document.getElementById('loginErrorMsg');
+
+            if ((username === 'Admin' || username.toLowerCase() === 'admin') && password === '1234') {
+                isSaccoLoggedIn = true;
+                closeModal('conductorLoginModal');
+                closeModal('landingScreen');
+
+                document.getElementById('portalSaccoBadge').innerText = `${activeSaccoFleet}`;
+                document.getElementById('portalCrewTitle').innerText = `Manager: ${username} (Badge #SM-NBI-408)`;
+                document.getElementById('homeSaccoPortalBtnLabel').innerText = "SACCO Portal";
+
+                switchTab('sacco');
+                renderSaccoRouteEditors();
+                showToast(`Authenticated as SACCO Manager (${activeSaccoFleet})`);
+            } else {
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function logoutConductorPortal() {
+            isSaccoLoggedIn = false;
+            showToast("Logged out of SACCO Portal");
+            showLandingScreen();
+        }
+
+        // ================= LEAFLET MAP ENGINE =================
+        function initLeafletMap() {
+            map = L.map('leafletMap', { zoomControl: false }).setView([userLocation.lat, userLocation.lng], 13);
+
+            googleRoadTileLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                attribution: '© Google Maps'
+            });
+
+            googleHybridTileLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                attribution: '© Google Maps Hybrid'
+            });
+
+            osmTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            });
+
+            googleRoadTileLayer.addTo(map);
+
+            const userIcon = L.divIcon({
+                className: 'custom-user-icon',
+                html: `<div class="w-6 h-6 rounded-full bg-blue-600 border-2 border-white pulse-user-marker flex items-center justify-center text-white text-[10px]"><i class="fa-solid fa-user"></i></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
+            userMarker.bindPopup("<b>Your GPS Position</b><br>Nairobi CBD Stage");
+
+            KENYA_STAGES.forEach(stg => {
+                const stageIcon = L.divIcon({
+                    className: 'custom-stage-icon',
+                    html: `<div class="w-7 h-7 rounded-full bg-orange text-navy border-2 border-white pulse-stage-marker flex items-center justify-center font-bold text-xs shadow"><i class="fa-solid fa-bus"></i></div>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+
+                const mKey = L.marker([stg.lat, stg.lng], { icon: stageIcon }).addTo(map);
+                mKey.bindPopup(`
+                    <div class="font-sans text-xs">
+                        <b class="text-navy">${stg.name}</b><br>
+                        <span class="text-slate-500">${stg.county} County Stage</span><br>
+                        <button onclick="selectStageFromMap('${stg.name}')" class="mt-1 px-2 py-1 bg-navy text-white text-[10px] font-bold rounded">Center Stage</button>
+                    </div>
+                `);
+            });
+
+            loadRoutePolyline(KENYA_ROUTES[0]);
+        }
+
+        function toggleMapTileLayer() {
+            if (currentTileLayer === 'google_road') {
+                map.removeLayer(googleRoadTileLayer);
+                googleHybridTileLayer.addTo(map);
+                currentTileLayer = 'google_hybrid';
+                document.getElementById('mapTileLabel').innerText = 'Google Hybrid';
+            } else if (currentTileLayer === 'google_hybrid') {
+                map.removeLayer(googleHybridTileLayer);
+                osmTileLayer.addTo(map);
+                currentTileLayer = 'osm';
+                document.getElementById('mapTileLabel').innerText = 'OpenStreetMap';
+            } else {
+                map.removeLayer(osmTileLayer);
+                googleRoadTileLayer.addTo(map);
+                currentTileLayer = 'google_road';
+                document.getElementById('mapTileLabel').innerText = 'Google Roads';
+            }
+            showToast(`Switched map layer to ${document.getElementById('mapTileLabel').innerText}`);
+        }
+
+        // ================= GPS LOCATION =================
+        function requestLiveGPS() {
+            const btnLabel = document.getElementById('gpsBtnLabel');
+            if (btnLabel) btnLabel.innerText = 'Locating...';
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        if (userMarker) userMarker.setLatLng([userLocation.lat, userLocation.lng]);
+                        if (map) map.setView([userLocation.lat, userLocation.lng], 14);
+
+                        document.getElementById('homeGpsStatusText').innerText = `Live GPS Fix (${userLocation.lat.toFixed(3)}, ${userLocation.lng.toFixed(3)})`;
+                        if (btnLabel) btnLabel.innerText = 'GPS Active';
+                        calculateDestinationAndNearestStage();
+                        showToast("Live GPS Position Acquired!");
+                    },
+                    (error) => {
+                        if (btnLabel) btnLabel.innerText = 'Use Live GPS';
+                        showToast("GPS Permission denied. Defaulting to Nairobi CBD.");
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else {
+                if (btnLabel) btnLabel.innerText = 'Use Live GPS';
+                showToast("Geolocation not supported on this browser.");
+            }
+        }
+
+        // ================= ANIMATED TRACK MOTION =================
+        function loadRoutePolyline(routeObj) {
+            currentSelectedRoute = routeObj;
+            activeRouteWaypoints = routeObj.waypoints;
+            const latLngs = activeRouteWaypoints.map(w => [w.lat, w.lng]);
+
+            if (routePolyline) map.removeLayer(routePolyline);
+
+            routePolyline = L.polyline(latLngs, {
+                color: simulationMode === 'walk' ? '#F7931E' : '#0B1F44',
+                weight: 5,
+                dashArray: simulationMode === 'walk' ? '6, 8' : null,
+                lineCap: 'round'
+            }).addTo(map);
+
+            map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+            document.getElementById('mapTitleText').innerText = `Track: ${routeObj.number} — ${routeObj.title}`;
+            resetMotionSimulation();
+        }
+
+        function setNavigationMode(mode) {
+            simulationMode = mode;
+            const matatuBtn = document.getElementById('modeMatatuBtn');
+            const walkBtn = document.getElementById('modeWalkBtn');
+            const iconBox = document.getElementById('motionIconBox');
+            const iconElem = document.getElementById('motionIcon');
+
+            if (mode === 'matatu') {
+                matatuBtn.className = "px-3 py-1 bg-navy text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow";
+                walkBtn.className = "px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1 hover:bg-slate-200";
+                iconBox.className = "w-10 h-10 rounded-2xl bg-orange/20 text-orange flex items-center justify-center text-lg font-bold";
+                iconElem.className = "fa-solid fa-bus";
+            } else {
+                walkBtn.className = "px-3 py-1 bg-navy text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow";
+                matatuBtn.className = "px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1 hover:bg-slate-200";
+                iconBox.className = "w-10 h-10 rounded-2xl bg-blue-100 text-navy flex items-center justify-center text-lg font-bold";
+                iconElem.className = "fa-solid fa-person-walking";
+            }
+
+            if (routePolyline) {
+                routePolyline.setStyle({
+                    color: mode === 'walk' ? '#F7931E' : '#0B1F44',
+                    dashArray: mode === 'walk' ? '6, 8' : null
+                });
+            }
+        }
+
+        function setSimulationSpeed(spd) {
+            simulationSpeed = spd;
+            ['1x', '2x', '5x'].forEach(s => {
+                const b = document.getElementById(`speed${s}`);
+                if (s === `${spd}x`) {
+                    b.className = "px-1.5 py-0.5 bg-white text-navy rounded shadow-xs font-bold";
+                } else {
+                    b.className = "px-1.5 py-0.5 text-slate-600 font-normal";
+                }
+            });
+
+            if (isSimulating) {
+                clearInterval(simulationInterval);
+                startMotionLoop();
+            }
+        }
+
+        function toggleMotionSimulation() {
+            if (isSimulating) pauseMotionSimulation();
+            else startMotionSimulation();
+        }
+
+        function startMotionSimulation() {
+            if (activeRouteWaypoints.length < 2) return;
+            isSimulating = true;
+            document.getElementById('playPauseIcon').className = "fa-solid fa-pause text-orange";
+            document.getElementById('playPauseText').innerText = "Pause Track";
+            showToast("Track Motion Simulation Running!");
+            startMotionLoop();
+        }
+
+        function pauseMotionSimulation() {
+            isSimulating = false;
+            clearInterval(simulationInterval);
+            document.getElementById('playPauseIcon').className = "fa-solid fa-play text-orange";
+            document.getElementById('playPauseText').innerText = "Resume Track";
+        }
+
+        function resetMotionSimulation() {
+            pauseMotionSimulation();
+            currentWaypointIndex = 0;
+            document.getElementById('playPauseText').innerText = "Start Track";
+            document.getElementById('motionProgressBar').style.width = '0%';
+
+            if (activeRouteWaypoints.length > 0) {
+                const startPoint = activeRouteWaypoints[0];
+                updateMovingMarkerPosition(startPoint.lat, startPoint.lng);
+                document.getElementById('navStepTitle').innerText = startPoint.name;
+                document.getElementById('navStepDesc').innerText = `Boarding Stage`;
+            }
+        }
+
+        function startMotionLoop() {
+            const intervalTime = Math.max(200, 1000 / simulationSpeed);
+            simulationInterval = setInterval(() => {
+                if (currentWaypointIndex >= activeRouteWaypoints.length - 1) {
+                    pauseMotionSimulation();
+                    document.getElementById('motionProgressBar').style.width = '100%';
+                    document.getElementById('navStepTitle').innerText = "Destination Reached!";
+                    document.getElementById('navStepDesc').innerText = "Arrived at terminus stage.";
+                    showToast("Journey track completed!");
+                    return;
+                }
+
+                currentWaypointIndex++;
+                const currWay = activeRouteWaypoints[currentWaypointIndex];
+                updateMovingMarkerPosition(currWay.lat, currWay.lng);
+
+                const progressPercent = (currentWaypointIndex / (activeRouteWaypoints.length - 1)) * 100;
+                document.getElementById('motionProgressBar').style.width = `${progressPercent}%`;
+                document.getElementById('navStepTitle').innerText = currWay.name;
+                document.getElementById('navStepDesc').innerText = `En route to ${currWay.name}`;
+
+                map.panTo([currWay.lat, currWay.lng]);
+            }, intervalTime);
+        }
+
+        function updateMovingMarkerPosition(lat, lng) {
+            const iconHtml = simulationMode === 'walk'
+                ? `<div class="w-8 h-8 rounded-full bg-orange text-navy border-2 border-white flex items-center justify-center font-bold text-sm shadow-xl"><i class="fa-solid fa-person-walking"></i></div>`
+                : `<div class="w-8 h-8 rounded-full bg-navy text-orange border-2 border-white flex items-center justify-center font-bold text-sm shadow-xl"><i class="fa-solid fa-bus"></i></div>`;
+
+            const vehicleIcon = L.divIcon({
+                className: 'moving-vehicle-icon',
+                html: iconHtml,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            if (!movingMarker) {
+                movingMarker = L.marker([lat, lng], { icon: vehicleIcon }).addTo(map);
+            } else {
+                movingMarker.setLatLng([lat, lng]);
+                movingMarker.setIcon(vehicleIcon);
+            }
+        }
+
+        // ================= FARES & ROUTES PAGE LOGIC =================
+        function filterFaresAndRoutes() {
+            const query = document.getElementById('faresSearchInput').value.toLowerCase().trim();
+            renderRouteCards(query);
+        }
+
+        function mapCalculatedRoute() {
+            switchTab('map');
+            if (currentSelectedRoute) {
+                loadRoutePolyline(currentSelectedRoute);
+            } else if (KENYA_ROUTES.length > 0) {
+                loadRoutePolyline(KENYA_ROUTES[0]);
+            }
+            showToast("Loaded journey track on interactive map!");
+        }
+
+        // ================= SACCO CONDUCTOR PORTAL LOGIC & BUG FIXES =================
+        function calculateLiveFare(r) {
+            if (!r || typeof r.baseFare !== 'number') return 100;
+            const mult = typeof activeMultiplier === 'number' ? activeMultiplier : 1.0;
+            return Math.round(r.baseFare * mult);
+        }
+
+        function switchSaccoFleet(saccoName) {
+            activeSaccoFleet = saccoName;
+            const badge = document.getElementById('portalSaccoBadge');
+            if (badge) badge.innerText = saccoName;
+            renderSaccoRouteEditors();
+            showToast(`Switched active SACCO fleet to ${saccoName}`);
+        }
+
+        function setFareRegime(regime, multiplier) {
+            activeRegimeName = regime;
+            activeMultiplier = multiplier;
+
+            ['normal', 'peak', 'rain', 'night'].forEach(rg => {
+                const btn = document.getElementById(`regimeBtn-${rg}`);
+                if (btn) {
+                    if (rg === regime) {
+                        btn.className = "p-3 rounded-2xl border border-blue-400 bg-softblue text-navy font-bold flex flex-col gap-1 text-left shadow-xs";
+                    } else {
+                        btn.className = "p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold flex flex-col gap-1 text-left";
+                    }
+                }
+            });
+
+            const badge = document.getElementById('activeRegimeBadge');
+            if (badge) badge.innerText = `${regime.toUpperCase()} (${multiplier}x)`;
+            
+            renderHomeFeatured();
+            renderRouteCards();
+            renderSaccoRouteEditors();
+            calculateDestinationAndNearestStage();
+            showToast(`Fare multiplier set to ${regime.toUpperCase()} (${multiplier}x)`);
+        }
+
+        function renderSaccoRouteEditors() {
+            const container = document.getElementById('saccoRouteEditorList');
+            if (!container) return;
+
+            let routes = KENYA_ROUTES.filter(r => r.sacco.toLowerCase() === activeSaccoFleet.toLowerCase());
+            if (routes.length === 0) routes = KENYA_ROUTES;
+
+            container.innerHTML = routes.map(r => {
+                const liveFare = calculateLiveFare(r);
+                return `
+                    <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <span class="text-[9px] font-bold bg-navy text-white px-2 py-0.5 rounded-full">${r.sacco}</span>
+                            <p class="font-bold text-navy text-xs mt-1">${r.number} — ${r.title}</p>
+                            <p class="text-[10px] text-slate-500">Base Fare: KSh ${r.baseFare}</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="decreaseBaseFare('${r.id}')" class="w-8 h-8 bg-slate-200 text-navy font-bold rounded-xl hover:bg-slate-300 flex items-center justify-center transition-all shadow-xs" title="Decrease base fare by KSh 10">
+                                <i class="fa-solid fa-minus text-xs"></i>
+                            </button>
+                            <span class="text-xs font-black text-navy bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 min-w-[70px] text-center">
+                                KSh ${liveFare}
+                            </span>
+                            <button onclick="increaseBaseFare('${r.id}')" class="w-8 h-8 bg-navy text-orange font-bold rounded-xl hover:bg-navy-light flex items-center justify-center transition-all shadow-xs" title="Increase base fare by KSh 10">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function increaseBaseFare(routeId) {
+            const r = KENYA_ROUTES.find(item => item.id === routeId);
+            if (r) {
+                r.baseFare += 10;
+                renderSaccoRouteEditors();
+                renderHomeFeatured();
+                renderRouteCards();
+                calculateDestinationAndNearestStage();
+                showToast(`Increased base rate for ${r.number} to KSh ${r.baseFare}`);
+            }
+        }
+
+        function decreaseBaseFare(routeId) {
+            const r = KENYA_ROUTES.find(item => item.id === routeId);
+            if (r) {
+                if (r.baseFare > 20) {
+                    r.baseFare -= 10;
+                    renderSaccoRouteEditors();
+                    renderHomeFeatured();
+                    renderRouteCards();
+                    calculateDestinationAndNearestStage();
+                    showToast(`Reduced base rate for ${r.number} to KSh ${r.baseFare}`);
+                } else {
+                    showToast("Minimum base fare limit reached (KSh 20)");
+                }
+            }
+        }
+
+        function broadcastPriceChanges() {
+            renderHomeFeatured();
+            renderRouteCards();
+            calculateDestinationAndNearestStage();
+            showToast("🚨 Live price changes broadcasted to all commuters!");
+        }
+
+        function publishPassengerAnnouncement() {
+            const msgInput = document.getElementById('announcementInput');
+            const msg = msgInput ? msgInput.value.trim() : '';
+            if (!msg) {
+                showToast("Please enter an announcement text first.");
+                return;
+            }
+
+            document.getElementById('alertBannerText').innerText = `${activeSaccoFleet} Alert: ${msg}`;
+            document.getElementById('passengerAlertBanner').classList.remove('hidden');
+            if (msgInput) msgInput.value = '';
+            showToast("Passenger announcement banner published!");
+        }
+
+        function closeAlertBanner() {
+            document.getElementById('passengerAlertBanner').classList.add('hidden');
+        }
+
+        // ================= VEHICLE CHARTER ESTIMATOR =================
+        function calculateCharterEstimate() {
+            const origin = document.getElementById('charterOriginSelect').value;
+            const dest = document.getElementById('charterDestSelect').value;
+
+            const key1 = `${origin}-${dest}`;
+            const key2 = `${dest}-${origin}`;
+            const distance = KENYA_DISTANCES[key1] || KENYA_DISTANCES[key2] || 160;
+
+            const estHours = Math.floor(distance / 50);
+            const estMins = Math.round((distance % 50) * 1.2);
+
+            document.getElementById('charterDistanceText').innerText = `${distance} km (${estHours} hrs ${estMins} min)`;
+            renderCharterVehicles(distance);
+        }
+
+        function renderCharterVehicles(distance = 160) {
+            const container = document.getElementById('charterVehiclesList');
+            if (!container) return;
+
+            container.innerHTML = CHARTER_VEHICLES.map(v => {
+                const totalCost = Math.max(v.baseDailyMin, distance * v.baseRatePerKm);
+                return `
+                    <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-xs flex flex-col gap-2">
+                        <div class="relative h-36 rounded-2xl overflow-hidden bg-slate-100">
+                            <img src="${v.img}" alt="${v.title}" class="w-full h-full object-cover">
+                            <span class="absolute top-2 right-2 bg-navy text-orange font-black text-xs px-2.5 py-1 rounded-full shadow">
+                                KSh ${totalCost.toLocaleString()} est.
+                            </span>
+                            <span class="absolute bottom-2 left-2 bg-black/70 text-white font-bold text-[10px] px-2 py-0.5 rounded-md backdrop-blur">
+                                <i class="fa-solid fa-users text-orange mr-1"></i> ${v.capacity}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-navy text-xs">${v.title}</h4>
+                                <p class="text-[10px] text-slate-500">${v.sacco} • ${v.type}</p>
+                            </div>
+                            <button onclick="openCharterModal('${v.title}', ${totalCost})" class="px-3 py-1.5 bg-orange text-navy font-bold text-xs rounded-xl hover:bg-amber-400 shadow">
+                                Charter
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openCharterModal(vehicleTitle, totalFare) {
+            document.getElementById('charterModalTitle').innerText = `Charter ${vehicleTitle}`;
+            document.getElementById('charterTotalFareText').innerText = `KSh ${totalFare.toLocaleString()}`;
+            document.getElementById('charterBookingModal').classList.remove('hidden');
+        }
+
+        function confirmCharterBooking() {
+            closeModal('charterBookingModal');
+            showToast("Charter Request Sent to SACCO Dispatch Desk!");
+        }
+
+        // ================= TAB SWITCHING =================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-page').forEach(page => page.classList.add('hidden'));
+            const activePage = document.getElementById(`tab-${tabId}`);
+            if (activePage) activePage.classList.remove('hidden');
+
+            const navButtons = ['home', 'search', 'map', 'charter', 'assistant'];
+            navButtons.forEach(btn => {
+                const navElem = document.getElementById(`nav-${btn}`);
+                if (navElem) {
+                    if (btn === tabId) {
+                        navElem.className = "flex flex-col items-center gap-1 p-1 text-orange transition-colors w-14 font-bold";
+                    } else {
+                        navElem.className = "flex flex-col items-center gap-1 p-1 text-slate-400 hover:text-orange transition-colors w-14";
+                    }
+                }
+            });
+
+            if (tabId === 'map' && map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 150);
+            }
+
+            document.getElementById('mainScrollArea').scrollTop = 0;
+        }
+
+        // ================= ROUTE RENDERING & FILTERS =================
+        function changeActiveCounty(val) {
+            activeCounty = val;
+            renderHomeFeatured();
+            renderRouteCards();
+            showToast(`Filtered by ${val} County`);
+        }
+
+        function renderHomeFeatured() {
+            const container = document.getElementById('homeFeaturedRoutes');
+            if (!container) return;
+
+            let routes = KENYA_ROUTES;
+            if (activeCounty !== 'All') {
+                routes = KENYA_ROUTES.filter(r => r.county.toLowerCase() === activeCounty.toLowerCase());
+            }
+
+            container.innerHTML = routes.slice(0, 3).map(r => {
+                const liveFare = calculateLiveFare(r);
+                return `
+                    <div onclick="openRouteDetails('${r.id}')" class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-orange transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-navy text-orange flex items-center justify-center font-bold text-xs">
+                                <i class="fa-solid fa-bus"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="font-bold text-navy text-xs">${r.title}</h4>
+                                    <span class="text-[9px] bg-orange/20 text-orange font-bold px-1.5 py-0.2 rounded">${r.sacco}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500">${r.number} • ${r.county} • <strong class="text-navy">KSh ${liveFare}</strong></p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderRouteCards(searchQuery = '') {
+            const container = document.getElementById('routeCardsContainer');
+            if (!container) return;
+
+            let filtered = KENYA_ROUTES;
+
+            if (activeCounty !== 'All') {
+                filtered = filtered.filter(r => r.county.toLowerCase() === activeCounty.toLowerCase());
+            }
+
+            if (activeRouteFilter === 'urban') filtered = filtered.filter(r => r.category === 'urban');
+            else if (activeRouteFilter === 'intercity') filtered = filtered.filter(r => r.category === 'intercity');
+            else if (activeRouteFilter === 'saved') filtered = filtered.filter(r => r.isSaved);
+
+            if (searchQuery) {
+                filtered = filtered.filter(r =>
+                    r.title.toLowerCase().includes(searchQuery) ||
+                    r.sacco.toLowerCase().includes(searchQuery) ||
+                    r.number.toLowerCase().includes(searchQuery) ||
+                    r.boarding.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            const countLbl = document.getElementById('routeCountLabel');
+            if (countLbl) countLbl.innerText = `${filtered.length} Routes`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs">
+                        <i class="fa-solid fa-route text-2xl text-slate-300 mb-2"></i>
+                        <p class="font-bold text-slate-600">No matching routes found</p>
+                        <p class="text-[10px] mt-1">Try adjusting your search query or region filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(r => {
+                const liveFare = calculateLiveFare(r);
+                return `
+                    <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-xs flex flex-col gap-2.5">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-softblue text-navy border border-blue-200">${r.number} • ${r.sacco}</span>
+                                <h3 class="font-bold text-navy text-sm mt-1">${r.title}</h3>
+                            </div>
+                            <button onclick="toggleStarRoute('${r.id}', event)" class="text-slate-300 hover:text-orange text-lg">
+                                <i class="${r.isSaved ? 'fa-solid text-orange' : 'fa-regular'} fa-star"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                            <div>
+                                <span class="text-[10px] text-slate-400 font-normal block">Conductor Fare</span>
+                                <span class="text-navy font-black text-sm">KSh ${liveFare}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 font-normal block">Regime</span>
+                                <span class="text-orange font-bold text-xs uppercase">${activeRegimeName}</span>
+                            </div>
+                        </div>
+
+                        <p class="text-[11px] text-slate-500"><i class="fa-solid fa-location-dot text-orange mr-1"></i> Boards: ${r.boarding}</p>
+                        
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                            <button onclick="openRouteDetails('${r.id}')" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold text-center">
+                                Details
+                            </button>
+                            <button onclick="selectAndMapRoute('${r.id}')" class="flex-1 py-2 bg-navy text-orange hover:bg-navy-light rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-xs">
+                                <i class="fa-solid fa-map-location-dot"></i> View on Map
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setRouteFilter(filter) {
+            activeRouteFilter = filter;
+            ['all', 'urban', 'intercity', 'saved'].forEach(f => {
+                const btn = document.getElementById(`filterBtn-${f}`);
+                if (btn) {
+                    btn.className = (f === filter)
+                        ? "flex-1 py-1.5 rounded-xl bg-white text-navy shadow-xs font-bold transition-all"
+                        : "flex-1 py-1.5 rounded-xl text-slate-600 hover:text-navy transition-all";
+                }
+            });
+            renderRouteCards();
+        }
+
+        // ================= SEARCH AUTOCOMPLETE =================
+        function handleHomeSearch(val) {
+            const dropdown = document.getElementById('searchDropdown');
+            const clearBtn = document.getElementById('clearSearchBtn');
+
+            if (!val.trim()) {
+                dropdown.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+                return;
+            }
+
+            clearBtn.classList.remove('hidden');
+            const matches = KENYA_STAGES.filter(s => s.name.toLowerCase().includes(val.toLowerCase()) || s.county.toLowerCase().includes(val.toLowerCase()));
+
+            dropdown.innerHTML = matches.map(s => `
+                <div onclick="selectStageFromMap('${s.name}')" class="p-3 hover:bg-softblue flex items-center justify-between cursor-pointer border-b border-slate-50 text-xs">
+                    <div>
+                        <p class="font-bold text-navy">${s.name}</p>
+                        <p class="text-[10px] text-slate-500">${s.county} County Stage</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                </div>
+            `).join('');
+
+            dropdown.classList.remove('hidden');
+        }
+
+        function clearSearch() {
+            document.getElementById('homeSearchInput').value = '';
+            document.getElementById('searchDropdown').classList.add('hidden');
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+        }
+
+        // ================= ROUTE MODAL =================
+        function openRouteDetails(routeId) {
+            const r = KENYA_ROUTES.find(item => item.id === routeId) || KENYA_ROUTES[0];
+            currentSelectedRoute = r;
+            const liveFare = calculateLiveFare(r);
+
+            document.getElementById('modalRouteBadge').innerText = `${r.number} • ${r.sacco}`;
+            document.getElementById('modalRouteTitle').innerText = r.title;
+            document.getElementById('modalFareText').innerText = `KSh ${liveFare}`;
+            document.getElementById('modalTimeText').innerText = r.time;
+
+            const stagesList = document.getElementById('modalStagesList');
+            stagesList.innerHTML = r.waypoints.map((w, i) => `
+                <div class="relative flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full ${i===0 ? 'bg-orange' : (i===r.waypoints.length-1 ? 'bg-red-500' : 'bg-navy')} -ml-[21px]"></span>
+                    <span>${w.name}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('routeDetailsModal').classList.remove('hidden');
+        }
+
+        function launchMapRoute() {
+            closeModal('routeDetailsModal');
+            if (currentSelectedRoute) {
+                selectAndMapRoute(currentSelectedRoute.id);
+            }
+        }
+
+        function selectAndMapRoute(routeId) {
+            const r = KENYA_ROUTES.find(item => item.id === routeId);
+            if (r) {
+                switchTab('map');
+                loadRoutePolyline(r);
+                showToast(`Loaded route track for ${r.number}`);
+            }
+        }
+
+        function toggleStarRoute(routeId, event) {
+            event.stopPropagation();
+            const r = KENYA_ROUTES.find(item => item.id === routeId);
+            if (r) {
+                r.isSaved = !r.isSaved;
+                renderRouteCards();
+                showToast(r.isSaved ? "Saved to Favourites" : "Removed from Favourites");
+            }
+        }
+
+        // ================= STAGE DIRECTORY =================
+        function showStageDirectoryModal() {
+            document.getElementById('stageDirectoryModal').classList.remove('hidden');
+        }
+
+        function renderDirectoryStagesList(stages) {
+            const container = document.getElementById('directoryStagesList');
+            if (!container) return;
+
+            container.innerHTML = stages.map(s => `
+                <div onclick="selectStageFromMap('${s.name}')" class="p-3 bg-slate-50 hover:bg-softblue rounded-2xl border border-slate-200 flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-bold text-navy text-xs">${s.name}</p>
+                        <p class="text-[10px] text-slate-500">${s.county} County Stage</p>
+                    </div>
+                    <i class="fa-solid fa-location-crosshairs text-orange text-xs"></i>
+                </div>
+            `).join('');
+        }
+
+        function filterDirectoryStages(query) {
+            const q = query.toLowerCase();
+            const filtered = KENYA_STAGES.filter(s => s.name.toLowerCase().includes(q) || s.county.toLowerCase().includes(q));
+            renderDirectoryStagesList(filtered);
+        }
+
+        function selectStageFromMap(stageName) {
+            closeModal('stageDirectoryModal');
+            clearSearch();
+            const s = KENYA_STAGES.find(stg => stg.name === stageName);
+            if (s && map) {
+                switchTab('map');
+                map.setView([s.lat, s.lng], 15);
+                document.getElementById('mapTitleText').innerText = `Selected Stage: ${s.name}`;
+                showToast(`Centered on ${s.name}`);
+            }
+        }
+
+        // ================= MULTI-TURN CONVERSATIONAL AI ASSISTANT =================
+        function sendQuickPrompt(promptText) {
+            if (isChatProcessing) return;
+            const input = document.getElementById('chatInput');
+            if (input) input.value = promptText;
+            sendChatMessage();
+        }
+
+        function sendChatMessage() {
+            if (isChatProcessing) return;
+
+            const input = document.getElementById('chatInput');
+            if (!input) return;
+            const userText = input.value.trim();
+            if (!userText) return;
+
+            isChatProcessing = true; // Lock processing to prevent double bubbles
+
+            const chatMessages = document.getElementById('chatMessages');
+
+            // 1. Render User Bubble
+            chatMessages.insertAdjacentHTML('beforeend', `
+                <div class="flex gap-2 max-w-[88%] ml-auto flex-row-reverse">
+                    <div class="w-7 h-7 rounded-full bg-navy text-white flex items-center justify-center text-xs shrink-0 font-bold">You</div>
+                    <div class="bg-navy p-3 rounded-2xl rounded-tr-none shadow-xs text-xs text-white leading-relaxed">
+                        ${userText}
+                    </div>
+                </div>
+            `);
+
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 2. Multi-turn Conversational AI Logic
+            setTimeout(() => {
+                let aiReplyHtml = "";
+                const lowerText = userText.toLowerCase();
+
+                // Detect if user wants to find nearest stage
+                if (lowerText.includes('nearest') || lowerText.includes('find stage') || lowerText.includes('nearest stage') || lowerText.includes('locate stage')) {
+                    let explicitDest = "";
+                    ['rongai', 'thika', 'nyeri', 'kisumu', 'mombasa', 'westlands', 'diani', 'naivasha', 'ruiru', 'eldoret', 'nakuru'].forEach(d => {
+                        if (lowerText.includes(d)) explicitDest = d;
+                    });
+
+                    if (explicitDest) {
+                        aiContext.userDestination = explicitDest;
+                        aiContext.step = 'stage_found';
+                        aiReplyHtml = generateNearestStageCardResponse(explicitDest);
+                    } else {
+                        aiContext.step = 'awaiting_destination';
+                        aiReplyHtml = `
+                            <p class="font-bold text-navy mb-1">I can help you locate your nearest boarding stage! 📍</p>
+                            <p>Where are you traveling to? Please type your destination below (e.g. <em>Rongai, Thika, Westlands, Nyeri, Kisumu...</em>)</p>
+                        `;
+                    }
+                } 
+                // Context State: User is answering where they want to go
+                else if (aiContext.step === 'awaiting_destination') {
+                    aiContext.userDestination = userText;
+                    aiContext.step = 'stage_found';
+                    aiReplyHtml = generateNearestStageCardResponse(userText);
+                } 
+                // Specific Fares Query
+                else if (lowerText.includes('fare') || lowerText.includes('price') || lowerText.includes('super metro') || lowerText.includes('cost')) {
+                    let matchedRoute = KENYA_ROUTES.find(r => 
+                        lowerText.includes(r.sacco.toLowerCase()) || 
+                        r.destinations.some(d => lowerText.includes(d))
+                    ) || KENYA_ROUTES[0];
+
+                    const liveFare = calculateLiveFare(matchedRoute);
+                    aiReplyHtml = `
+                        <div class="flex flex-col gap-1.5">
+                            <p>🚌 The current live conductor fare for <strong>${matchedRoute.sacco} (${matchedRoute.number})</strong> to ${matchedRoute.title} is <strong>KSh ${liveFare}</strong>.</p>
+                            <p class="text-[11px] text-slate-500">Boarding Stage: <strong>${matchedRoute.boarding}</strong> (Active Regime: ${activeRegimeName.toUpperCase()}).</p>
+                        </div>
+                    `;
+                }
+                // Vehicle Charter Query
+                else if (lowerText.includes('charter') || lowerText.includes('hire') || lowerText.includes('14-seater') || lowerText.includes('bus')) {
+                    aiReplyHtml = `
+                        <div class="flex flex-col gap-2">
+                            <p>🚐 You can charter 14, 24, 33, or 51-seater vans and luxury buses for inter-county travel.</p>
+                            <div class="bg-softblue p-2 rounded-xl text-[11px] font-bold text-navy">
+                                Base Rate: 14-seater ~ KSh 12,000/day | 51-seater ~ KSh 38,000/day.
+                            </div>
+                            <button onclick="switchTab('charter')" class="py-1.5 px-3 bg-navy text-orange font-bold text-xs rounded-xl shadow hover:bg-navy-light text-center">
+                                View Full Charter Fleet
+                            </button>
+                        </div>
+                    `;
+                }
+                // Default Conversational Fallback
+                else {
+                    aiContext.step = 'idle';
+                    aiReplyHtml = `
+                        <p>Sasa! I am ready to help you navigate Kenya. You can ask me:</p>
+                        <ul class="list-disc pl-4 mt-1 space-y-1 text-[11px]">
+                            <li><em>"Find nearest stage"</em></li>
+                            <li><em>"What is the Super Metro fare to Rongai?"</em></li>
+                            <li><em>"How much is a 14-seater charter to Naivasha?"</em></li>
+                        </ul>
+                    `;
+                }
+
+                // Append AI Response
+                chatMessages.insertAdjacentHTML('beforeend', `
+                    <div class="flex gap-2 max-w-[88%]">
+                        <div class="w-7 h-7 rounded-full bg-pinkaccent text-white flex items-center justify-center text-xs shrink-0 font-bold">AI</div>
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-xs text-xs text-slate-700 leading-relaxed">
+                            ${aiReplyHtml}
+                        </div>
+                    </div>
+                `);
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                isChatProcessing = false; // Unlock processing
+            }, 450);
+        }
+
+        function generateNearestStageCardResponse(destinationQuery) {
+            const nearestObj = findNearestStageToCoordinates(userLocation.lat, userLocation.lng);
+            const nearestStage = nearestObj.stage;
+            const distMeters = Math.round(nearestObj.distanceKm * 1000);
+            const distText = distMeters < 1000 ? `${distMeters} meters walk` : `${nearestObj.distanceKm.toFixed(1)} km away`;
+
+            let matchingRoute = KENYA_ROUTES.find(r => 
+                r.destinations.some(d => destinationQuery.toLowerCase().includes(d)) || 
+                r.title.toLowerCase().includes(destinationQuery.toLowerCase())
+            ) || KENYA_ROUTES[0];
+
+            currentSelectedRoute = matchingRoute;
+
+            const baseFare = matchingRoute.baseFare || 100;
+            const fareReg = Math.round(baseFare * 1.0 * activeMultiplier);
+            const farePeak = Math.round(baseFare * 1.35 * activeMultiplier);
+            const fareRain = Math.round(baseFare * 1.50 * activeMultiplier);
+
+            return `
+                <div class="flex flex-col gap-2">
+                    <p>📍 For <strong>${destinationQuery.toUpperCase()}</strong>, your nearest boarding point is <strong>${nearestStage.name}</strong> (${distText}).</p>
+                    
+                    <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center font-bold text-navy">
+                            <span>${matchingRoute.number} • ${matchingRoute.sacco}</span>
+                            <span class="text-orange text-[10px] uppercase">${matchingRoute.title}</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-1 text-center font-semibold pt-1 border-t border-slate-200 text-[10px]">
+                            <div class="bg-white p-1 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block text-[9px]">Regular</span>
+                                <span class="text-emerald-700 font-bold">KSh ${fareReg}</span>
+                            </div>
+                            <div class="bg-white p-1 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block text-[9px]">Peak</span>
+                                <span class="text-orange font-bold">KSh ${farePeak}</span>
+                            </div>
+                            <div class="bg-white p-1 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block text-[9px]">Surge</span>
+                                <span class="text-purple-700 font-bold">KSh ${fareRain}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="selectStageFromMap('${nearestStage.name}')" class="w-full py-2 bg-orange text-navy font-bold text-xs rounded-xl hover:bg-amber-400 transition-all shadow flex items-center justify-center gap-1.5 mt-0.5">
+                        <i class="fa-solid fa-map-location-dot"></i> 🗺️ Open Map & Direct Me
+                    </button>
+                </div>
+            `;
+        }
+
+        // ================= GENERAL UTILITIES =================
+        function toggleNetworkStatus() {
+            isOnline = !isOnline;
+            const bannerText = document.getElementById('bannerNetText');
+            const netStatusText = document.getElementById('netStatusText');
+
+            if (isOnline) {
+                bannerText.innerText = "Online — Live SACCO Pricing Active";
+                if (netStatusText) netStatusText.innerText = "Online";
+                showToast("Online Connection Restored");
+            } else {
+                bannerText.innerText = "You're Offline — Using Cached SACCO Fare Table";
+                if (netStatusText) netStatusText.innerText = "Offline";
+                showToast("Offline Mode Active — Cached Data Loaded");
+            }
+        }
+
+        function toggleDeviceLayout() {
+            isPhoneFrame = !isPhoneFrame;
+            const app = document.getElementById('appContainer');
+            const txt = document.getElementById('layoutBtnText');
+
+            if (isPhoneFrame) {
+                app.className = "w-full phone-frame bg-white flex flex-col relative overflow-hidden transition-all duration-300 my-auto shadow-2xl";
+                txt.innerText = "Expand View";
+            } else {
+                app.className = "w-full full-frame bg-white flex flex-col relative overflow-hidden transition-all duration-300 my-auto shadow-2xl border border-slate-700";
+                txt.innerText = "Phone Shell";
+            }
+
+            if (map) {
+                setTimeout(() => map.invalidateSize(), 300);
+            }
+        }
+
+        function closeModal(modalId) {
+            const elem = document.getElementById(modalId);
+            if (elem) elem.classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastText').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+    </script>
+</body>
+</html>
